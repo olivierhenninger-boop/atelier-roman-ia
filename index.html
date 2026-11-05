@@ -4,61 +4,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Atelier Roman IA</title>
+<meta name="description" content="Créez votre roman avec l'IA : pitch, plan, personnages, univers et rédaction chapitre par chapitre.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📖%3C/text%3E%3C/svg%3E">
 <style>
-:root{--bg:#faf9f7;--panel:#fff;--text:#292524;--muted:#78716c;--border:#e7e5e4;--accent:#b45309;--accenth:#92400e;--barbg:#fffbeb;--barborder:#fde68a;--inputbg:#fff;--soft:#f5f5f4}
-body.dark{--bg:#1c1917;--panel:#292524;--text:#f5f5f4;--muted:#a8a29e;--border:#44403c;--accent:#d97706;--accenth:#f59e0b;--barbg:#292524;--barborder:#57534e;--inputbg:#1c1917;--soft:#3f3a36}
+:root{
+ --bg:#f6f3ed; --panel:#fffdf8; --panel2:#f9f5ee; --text:#23262e; --muted:#6f7480;
+ --border:#e5e1d7; --soft:#efeae0; --accent:#1f3a5f; --accent2:#16304d; --gold:#a8854f;
+ --inputbg:#fff; --ok:#2f7d4f;
+ --shadow:0 1px 2px rgba(28,25,23,.05),0 10px 30px rgba(28,25,23,.06);
+ --radius:14px;
+}
+body.dark{
+ --bg:#171a20; --panel:#20242c; --panel2:#252a33; --text:#eceae5; --muted:#9aa1ac;
+ --border:#343b46; --soft:#2a303a; --accent:#41729e; --accent2:#4f82b5; --gold:#c9a86a;
+ --inputbg:#171a20; --ok:#4c9e6f;
+ --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 30px rgba(0,0,0,.25);
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--text);max-width:1000px;margin:0 auto;padding:24px;min-height:100vh}
-h1{color:var(--accent);font-size:1.9rem;margin-bottom:4px}
-.sub{color:var(--muted);font-size:.9rem;margin-bottom:20px;font-family:system-ui,sans-serif}
-h2{font-size:1.3rem;color:var(--accent);border-bottom:2px solid var(--border);padding-bottom:8px;margin-bottom:16px}
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--barbg);border:1px solid var(--barborder);border-radius:10px;padding:12px;margin-bottom:14px;font-family:system-ui,sans-serif;font-size:.85rem}
-input,select,textarea,button{font-family:system-ui,sans-serif;font-size:.9rem;border-radius:8px;border:1px solid var(--border);padding:8px 10px;background:var(--inputbg);color:var(--text)}
-input[type=password]{flex:1;min-width:200px}
-textarea{width:100%;line-height:1.6;font-family:Georgia,serif}
-label{font-family:system-ui,sans-serif;font-size:.85rem;font-weight:600;display:block;margin:10px 0 4px;color:var(--muted)}
-button{cursor:pointer;background:var(--accent);color:#fff;border:none;font-weight:600;padding:8px 14px}
-button:hover{background:var(--accenth)}
-button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
-button.small{padding:5px 10px;font-size:.8rem}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;font-family:system-ui,sans-serif}
-.tab{padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--panel);cursor:pointer;font-size:.85rem;font-weight:600;color:var(--muted)}
-.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.panel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.panel.active{display:block}
-.row{display:flex;gap:12px;flex-wrap:wrap}
-.row>div{flex:1;min-width:200px}
-.err{background:#7f1d1d10;border:1px solid #b91c1c55;color:#dc2626;padding:10px;border-radius:8px;margin-bottom:12px;font-family:system-ui,sans-serif;font-size:.85rem;display:none}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);max-width:1020px;margin:0 auto;padding:24px 24px 60px;min-height:100vh;font-size:15px;line-height:1.55}
+.masthead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:26px 0 18px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.overline{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px}
+h1{font-family:'Palatino Linotype',Palatino,Georgia,'Times New Roman',serif;font-size:2.15rem;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.sub{color:var(--muted);font-size:.88rem;margin-top:8px;max-width:640px}
+.serif{font-family:'Palatino Linotype',Palatino,Georgia,'Times New Roman',serif}
+.topbtns{display:flex;gap:6px;flex-shrink:0}
+button{font-family:inherit;font-size:.88rem;border-radius:10px;border:none;cursor:pointer;font-weight:600;padding:9px 16px;
+ background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .06s ease,box-shadow .15s ease}
+button:hover{box-shadow:0 3px 10px rgba(0,0,0,.18)}
+button:active{transform:translateY(1px)}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
+button.ghost:hover{background:var(--soft)}
+button.small{padding:6px 11px;font-size:.8rem;border-radius:8px}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{font-family:inherit;font-size:.9rem;border-radius:10px;border:1px solid var(--border);padding:9px 12px;background:var(--inputbg);color:var(--text)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+textarea{width:100%;line-height:1.65}
+label{font-size:.8rem;font-weight:600;display:block;margin:12px 0 5px;color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;box-shadow:var(--shadow);font-size:.85rem}
+input[type=password]{flex:1;min-width:220px}
+.err{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.35);color:#b91c1c;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:.85rem;display:none}
 body.dark .err{color:#fca5a5}
-.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72rem;font-family:system-ui,sans-serif;background:var(--soft);color:var(--muted);margin-left:8px}
-.badge.ok{background:#15803d;color:#fff}
-.chap{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
-.chap h3{font-size:1.05rem;margin-bottom:8px}
-.chap .sum{color:var(--muted);font-style:italic;font-size:.85rem;margin-bottom:8px}
-.wc{font-family:system-ui,sans-serif;font-size:.75rem;color:var(--muted);font-weight:400}
-.perso{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
-.spin{opacity:.6;pointer-events:none}
-.hint{font-size:.78rem;color:var(--muted);font-family:system-ui,sans-serif;margin-top:8px}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.topbtns{display:flex;gap:6px}
-.pbar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;flex:1;min-width:120px}
-.pfill{height:100%;background:var(--accent)}
-.statsrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:.85rem;color:var(--muted)}
-.hero{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:48px 32px;text-align:center;margin-top:24px}
-.hero h2{border:none;font-size:2rem;margin-bottom:10px;padding:0}
-.hero p{color:var(--muted);max-width:560px;margin:0 auto 24px;font-size:1.02rem}
-.feats{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:28px;font-family:system-ui,sans-serif;font-size:.85rem;color:var(--muted)}
-.hero .start{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:640px;margin:0 auto}
-.hero input{min-width:200px}
-.hero .big{font-size:1rem;padding:12px 24px}
-.langbtn{background:transparent;color:var(--muted);border:1px solid var(--border);padding:4px 10px;font-size:.8rem}
-.langbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.badge{display:inline-block;padding:3px 11px;border-radius:99px;font-size:.72rem;background:var(--soft);color:var(--muted);margin-left:8px;font-weight:600}
+.badge.ok{background:var(--ok);color:#fff}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;background:var(--soft);padding:4px;border-radius:12px;margin-bottom:18px;width:fit-content}
+.tab{padding:8px 16px;border-radius:9px;border:none;background:transparent;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--muted);box-shadow:none}
+.tab.active{background:var(--panel);box-shadow:var(--shadow);color:var(--text)}
+.panel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.panel.active{display:block}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.row>div{flex:1;min-width:200px}
 select.wide{width:100%}
+.hint{font-size:.78rem;color:var(--muted);margin-top:8px}
+.card{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1.08rem;margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.card .sum{color:var(--muted);font-style:italic;font-size:.85rem;margin-bottom:8px}
+.wc{font-size:.74rem;color:var(--muted);font-weight:400}
+.perso{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.spin{opacity:.55;pointer-events:none;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.statsrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.84rem;color:var(--muted)}
+.pbar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;flex:1;min-width:140px}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .4s ease}
+.hero{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:56px 36px;text-align:center;margin-top:8px;box-shadow:var(--shadow)}
+.hero .overline{margin-bottom:12px}
+.hero h2{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:2.6rem;line-height:1.08;letter-spacing:-.015em;margin-bottom:14px;font-weight:700}
+.hero p{color:var(--muted);max-width:580px;margin:0 auto 30px;font-size:1rem}
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;max-width:760px;margin:0 auto 32px}
+.feat{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px 10px;font-size:.82rem;font-weight:600;color:var(--text)}
+.hero .start{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:680px;margin:0 auto}
+.hero input{min-width:220px}
+.hero .big{font-size:.95rem;padding:11px 26px}
+.langbtn{background:transparent;color:var(--muted);border:1px solid var(--border);padding:5px 12px;font-size:.78rem;box-shadow:none}
+.langbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sep{border:none;border-top:1px solid var(--border);margin:14px 0}
+footer{text-align:center;color:var(--muted);font-size:.75rem;margin-top:36px}
+h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1.45rem;letter-spacing:-.01em;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;font-weight:700}
 </style>
 </head>
 <body>
-<div class="top">
-  <div><h1>📖 Atelier Roman IA</h1><p class="sub" id="t-tagline"></p></div>
+<div class="masthead">
+  <div>
+    <div class="overline">Atelier d'écriture par IA</div>
+    <h1>Atelier Roman IA</h1>
+    <p class="sub" id="t-tagline"></p>
+  </div>
   <div class="topbtns">
     <button class="langbtn" id="btn-fr">FR</button>
     <button class="langbtn" id="btn-en">EN</button>
@@ -68,6 +97,7 @@ select.wide{width:100%}
 
 <!-- Écran d'accueil -->
 <div class="hero" id="hero" style="display:none">
+  <div class="overline" id="t-heroOverline"></div>
   <h2 id="t-heroTitle"></h2>
   <p id="t-heroDesc"></p>
   <div class="feats" id="hero-feats"></div>
@@ -76,16 +106,16 @@ select.wide{width:100%}
     <select id="hero-genre"></select>
     <button class="big" id="hero-start"></button>
   </div>
-  <div style="margin-top:16px"><button class="ghost" id="hero-load"></button>
+  <div style="margin-top:18px"><button class="ghost" id="hero-load"></button>
   <input type="file" id="importFile" accept=".json" style="display:none"></div>
-  <p class="hint" id="t-heroHint" style="margin-top:24px"></p>
+  <p class="hint" id="t-heroHint" style="margin-top:28px"></p>
 </div>
 
 <!-- Espace de travail -->
 <div id="work" style="display:none">
-  <div class="bar" id="projbar">
+  <div class="bar">
     <strong id="t-projects"></strong>
-    <select id="projSel" style="min-width:160px"></select>
+    <select id="projSel" style="min-width:170px"></select>
     <button class="ghost small" id="b-new"></button>
     <button class="ghost small" id="b-saveproj"></button>
     <button class="ghost small" id="b-import"></button>
@@ -113,7 +143,7 @@ select.wide{width:100%}
   </div>
 
   <div class="panel active" id="p-projet">
-    <h2 id="t-hProjet"></h2>
+    <h2 class="paneltitle" id="t-hProjet"></h2>
     <label id="t-lTitle"></label><input id="title" style="width:100%">
     <div class="row">
       <div><label id="t-lGenre"></label><select id="genre" class="wide"></select></div>
@@ -124,25 +154,25 @@ select.wide{width:100%}
       <label style="margin:0" id="t-lPitch"></label>
       <button id="b-pitch"></button>
     </div>
-    <textarea id="pitch" rows="5" style="margin-top:4px"></textarea>
+    <textarea id="pitch" rows="5" style="margin-top:6px" class="serif"></textarea>
     <div id="pitchOptions" style="margin-top:12px"></div>
     <p class="hint" id="t-pitchHint" style="display:none;margin-top:10px"></p>
-    <div id="autoStatus" class="badge ok" style="display:none;margin-top:10px;font-family:system-ui,sans-serif;font-size:.85rem"></div>
+    <div id="autoStatus" class="badge ok" style="display:none;margin-top:10px;font-size:.85rem"></div>
   </div>
 
   <div class="panel" id="p-plan">
-    <h2 id="t-hPlan"></h2>
+    <h2 class="paneltitle" id="t-hPlan"></h2>
     <div class="row" style="align-items:center">
       <div style="flex:0 0 auto"><label style="margin:0" id="t-lNCh"></label></div>
       <div style="flex:0 0 80px"><input type="number" id="nch" value="12" min="3" max="40"></div>
       <div style="flex:0 0 auto"><button id="b-plan"></button></div>
     </div>
-    <textarea id="plan" rows="16" style="margin-top:10px"></textarea>
+    <textarea id="plan" rows="16" style="margin-top:10px" class="serif"></textarea>
     <p class="hint" id="t-planHint"></p>
   </div>
 
   <div class="panel" id="p-perso">
-    <h2 id="t-hPerso"></h2>
+    <h2 class="paneltitle" id="t-hPerso"></h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <button id="b-perso"></button>
       <button class="ghost" id="b-perso-add"></button>
@@ -151,13 +181,13 @@ select.wide{width:100%}
   </div>
 
   <div class="panel" id="p-monde">
-    <h2 id="t-hMonde"></h2>
+    <h2 class="paneltitle" id="t-hMonde"></h2>
     <button id="b-monde"></button>
-    <textarea id="world" rows="14" style="margin-top:10px"></textarea>
+    <textarea id="world" rows="14" style="margin-top:10px" class="serif"></textarea>
   </div>
 
   <div class="panel" id="p-redac">
-    <h2 id="t-hRedac"></h2>
+    <h2 class="paneltitle" id="t-hRedac"></h2>
     <div class="statsrow" style="margin-bottom:12px">
       <span id="stats"></span>
       <label style="margin:0" id="t-lGoal"></label>
@@ -165,7 +195,10 @@ select.wide{width:100%}
       <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
       <span id="pct"></span>
     </div>
-    <div class="statsrow" style="margin-bottom:14px">
+    <div class="statsrow" style="margin-bottom:16px">
+      <label style="margin:0" id="t-lChLen"></label>
+      <select id="chlen"></select>
+      <hr class="sep" style="flex:0 0 100%;margin:8px 0">
       <strong id="t-exports"></strong>
       <button class="ghost small" id="b-export">.txt</button>
       <button class="ghost small" id="b-export-md">.md</button>
@@ -174,6 +207,8 @@ select.wide{width:100%}
     <div id="chaps"></div>
   </div>
 </div>
+
+<footer id="footer"></footer>
 
 <script>
 // ============================= i18n =============================
@@ -189,18 +224,22 @@ var T={
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
  hMonde:"Univers & cadre",bMonde:"✨ Générer l'univers",
- hRedac:"Rédaction",lGoal:"Objectif :",exports:"Exporter :",noChap:"Générez d'abord un plan (onglet ②) pour créer les chapitres.",
+ hRedac:"Rédaction",lGoal:"Objectif :",lChLen:"Longueur des chapitres :",
+ chStd:"Standard (~1500-2000 mots)",chLong:"Long (~2500-3500 mots)",chXLong:"Très long (4000 mots et plus)",
+ exports:"Exporter :",noChap:"Générez d'abord un plan (onglet ②) pour créer les chapitres.",
  words:"mots",written:"écrits",
- bWrite:"✨ Écrire le chapitre",bRegen:"↻ Réécrire entièrement",bCont:"✍️ Continuer mon texte",bRewrite:"↻ Réécrire",
+ bWrite:"✨ Écrire le chapitre",bRegen:"↻ Réécrire entièrement",bCont:"✍️ Continuer mon texte (+1000)",bRewrite:"↻ Réécrire",
  selRewrite:"Option de réécriture…",rwDarker:"Plus sombre",rwDialog:"Plus dialogué",rwShort:"Plus court",rwDescr:"Plus descriptif",rwTense:"Plus de tension",
  bReviewed:"✓ Révisé",bUnreview:"Dé-réviser",notesPh:"Instructions pour l'IA (optionnel) : ex. « ajoute plus de dialogues », « termine par un cliffhanger »…",
  projects:"Projets :",bNew:"+ Nouveau",bSaveproj:"💾 Sauvegarder",bImport:"📂 Importer",bDelete:"🗑 Supprimer",
  deleteConfirm:"Supprimer définitivement ce roman ?",errKey:"Ajoutez votre clé API Mistral en haut de page.",
- noEpub:"Écrivez au moins un chapitre avant d'exporter.",errJson:"Fichier illisible : ce n'est pas une sauvegarde Atelier Roman IA.",
- heroTitle:"Votre roman, écrit avec l'IA",heroDesc:"Définissez une idée, l'IA propose le pitch, le plan, les personnages, l'univers, puis rédige les chapitres. Vous gardez la main à chaque étape.",
- feat1:"📚 Structure en 3 actes",feat2:"🧑‍🎤 Personnages cohérents",feat3:"✍️ Co-écriture",feat4:"📤 Export .txt, .md et .epub",
+ noEpub:"Écrivez au moins un chapitre avant d'exporter.",errJson:"Réponse IA illisible, réessayez.",
+ heroOverline:"Bienvenue dans l'atelier",
+ heroTitle:"Votre roman, écrit avec l'IA",heroDesc:"Définissez une idée, l'IA propose trois pitchs ; choisissez-en un et elle construit personnages, univers et plan. Puis rédigez des chapitres denses et vivants, à quatre mains avec la machine.",
+ feat1:"📚 Structure en 3 actes",feat2:"🧑‍🎤 Personnages cohérents",feat3:"✍️ Co-écriture",feat4:"📤 Export .txt, .md, .epub",
  heroStart:"📖 Commencer mon roman",heroLoad:"📂 Importer une sauvegarde",heroTitlePh:"Le titre de votre roman…",
- heroHint:"Gratuit. Chaque visiteur utilise sa propre clé API Mistral (console.mistral.ai). Vos textes restent dans votre navigateur."},
+ heroHint:"Gratuit. Chaque visiteur utilise sa propre clé API Mistral (console.mistral.ai). Vos textes restent dans votre navigateur.",
+ footer:"Atelier Roman IA · vos textes restent dans votre navigateur"},
  en:{tagline:"Create your novel with AI: pitch, outline, characters, worldbuilding, and chapter-by-chapter writing. Everything is saved in your browser.",
  settings:"AI connection",keyPh:"Mistral API key (console.mistral.ai)",keyNeeded:"Key required",connected:"Connected",
  tab1:"① Project",tab2:"② Outline",tab3:"③ Characters",tab4:"④ World",tab5:"⑤ Writing",
@@ -212,18 +251,22 @@ var T={
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
  hMonde:"World & setting",bMonde:"✨ Generate the world",
- hRedac:"Writing",lGoal:"Goal:",exports:"Export:",noChap:"Generate an outline first (tab ②) to create chapters.",
+ hRedac:"Writing",lGoal:"Goal:",lChLen:"Chapter length:",
+ chStd:"Standard (~1500-2000 words)",chLong:"Long (~2500-3500 words)",chXLong:"Extra long (4000+ words)",
+ exports:"Export:",noChap:"Generate an outline first (tab ②) to create chapters.",
  words:"words",written:"written",
- bWrite:"✨ Write the chapter",bRegen:"↻ Rewrite entirely",bCont:"✍️ Continue my text",bRewrite:"↻ Rewrite",
+ bWrite:"✨ Write the chapter",bRegen:"↻ Rewrite entirely",bCont:"✍️ Continue my text (+1000)",bRewrite:"↻ Rewrite",
  selRewrite:"Rewrite option…",rwDarker:"Darker",rwDialog:"More dialogue",rwShort:"Shorter",rwDescr:"More descriptive",rwTense:"More tension",
  bReviewed:"✓ Reviewed",bUnreview:"Un-review",notesPh:"Instructions for the AI (optional): e.g. “add more dialogue”, “end on a cliffhanger”…",
  projects:"Projects:",bNew:"+ New",bSaveproj:"💾 Save",bImport:"📂 Import",bDelete:"🗑 Delete",
  deleteConfirm:"Permanently delete this novel?",errKey:"Add your Mistral API key at the top of the page.",
- noEpub:"Write at least one chapter before exporting.",errJson:"Unreadable file: not an Atelier Roman IA backup.",
- heroTitle:"Your novel, written with AI",heroDesc:"Start from an idea; the AI drafts the pitch, outline, characters and world, then writes the chapters. You stay in control at every step.",
- feat1:"📚 3-act structure",feat2:"🧑‍🎤 Consistent characters",feat3:"✍️ Co-writing",feat4:"📤 Export .txt, .md and .epub",
+ noEpub:"Write at least one chapter before exporting.",errJson:"Unreadable AI answer, try again.",
+ heroOverline:"Welcome to the workshop",
+ heroTitle:"Your novel, written with AI",heroDesc:"Start from an idea; the AI drafts three pitches; pick one and it builds characters, world and outline. Then write rich, vivid chapters, hand in hand with the machine.",
+ feat1:"📚 3-act structure",feat2:"🧑‍🎤 Consistent characters",feat3:"✍️ Co-writing",feat4:"📤 Export .txt, .md, .epub",
  heroStart:"📖 Start my novel",heroLoad:"📂 Import a backup",heroTitlePh:"The title of your novel…",
- heroHint:"Free. Each visitor uses their own Mistral API key (console.mistral.ai). Your texts stay in your browser."}
+ heroHint:"Free. Each visitor uses their own Mistral API key (console.mistral.ai). Your texts stay in your browser.",
+ footer:"Atelier Roman IA · your texts stay in your browser"}
 };
 var L=localStorage.getItem("aria-lang")||"fr";
 function t(k){return (T[L]&&T[L][k])||T.fr[k];}
@@ -231,18 +274,17 @@ function t(k){return (T[L]&&T[L][k])||T.fr[k];}
 var GENRES=[{v:"fantasy",fr:"Fantasy",en:"Fantasy"},{v:"scifi",fr:"Science-fiction",en:"Science fiction"},{v:"polar",fr:"Policier",en:"Detective"},{v:"thriller",fr:"Thriller",en:"Thriller"},{v:"romance",fr:"Romance",en:"Romance"},{v:"historique",fr:"Historique",en:"Historical"},{v:"horreur",fr:"Horreur",en:"Horror"},{v:"aventure",fr:"Aventure",en:"Adventure"},{v:"contemporain",fr:"Contemporain",en:"Contemporary"},{v:"medieval",fr:"Médiéval",en:"Medieval"}];
 var STYLES=[{v:"classic",fr:"Roman classique, 3e personne",en:"Classic novel, third person"},{v:"p1",fr:"À la première personne",en:"First person"},{v:"poetique",fr:"Style littéraire poétique",en:"Poetic literary style"},{v:"ya",fr:"Style jeune adulte",en:"Young adult style"},{v:"noir",fr:"Style noir et punchy",en:"Hard-boiled and punchy"},{v:"humour",fr:"Humoristique",en:"Humorous"}];
 function label(list,v){for(var i=0;i<list.length;i++){if(list[i].v===v)return list[i][L];}return list[0][L];}
-function nlabel(list,v){return list[0][v]?list[0][v]:"fr";} // inutilisé
 
 // ============================= Données =============================
 var DB={current:null,projects:[]};
 try{var s=localStorage.getItem("aria-db");if(s){DB=JSON.parse(s);}else{
   var old=localStorage.getItem("roman-ia");
   if(old){var o=JSON.parse(old);
-    if(o&&(o.title||o.pitch||o.plan||(o.chapters&&o.chapters.length))){o.id="p"+Date.now();o.nlang=o.nlang||"fr";o.goal=o.goal||50000;DB.projects.push(o);DB.current=o.id;}}}
+    if(o&&(o.title||o.pitch||o.plan||(o.chapters&&o.chapters.length))){o.id="p"+Date.now();o.nlang=o.nlang||"fr";o.goal=o.goal||50000;o.chlen=o.chlen||"std";DB.projects.push(o);DB.current=o.id;}}}
 }catch(e){}
 function save(){try{localStorage.setItem("aria-db",JSON.stringify(DB));}catch(e){}}
 function cur(){for(var i=0;i<DB.projects.length;i++){if(DB.projects[i].id===DB.current)return DB.projects[i];}return null;}
-function newProject(title,genre){var p={id:"p"+Date.now(),title:title||"",genre:genre||"fantasy",style:"classic",nlang:L==="en"?"en":"fr",pitch:"",plan:"",world:"",characters:[],chapters:[],goal:50000};DB.projects.push(p);DB.current=p.id;save();return p;}
+function newProject(title,genre){var p={id:"p"+Date.now(),title:title||"",genre:genre||"fantasy",style:"classic",nlang:L==="en"?"en":"fr",pitch:"",plan:"",world:"",characters:[],chapters:[],goal:50000,chlen:"std"};DB.projects.push(p);DB.current=p.id;save();return p;}
 
 function $(id){return document.getElementById(id);}
 function showErr(m){var e=$("err");e.textContent=m;e.style.display="block";setTimeout(function(){e.style.display="none";},9000);}
@@ -251,7 +293,7 @@ function slug(s){return (s||"roman").toLowerCase().replace(/[^\w\-]+/g,"-").repl
 // ============================= API Mistral =============================
 function callMistral(sys,prompt,cb){
   var key=$("apikey").value;if(!key){showErr(t("errKey"));busy(false);return false;}
-  var body=JSON.stringify({model:$("model").value,messages:[{role:"system",content:sys},{role:"user",content:prompt}],temperature:0.8});
+  var body=JSON.stringify({model:$("model").value,messages:[{role:"system",content:sys},{role:"user",content:prompt}],temperature:0.8,max_tokens:4096});
   fetch("https://api.mistral.ai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:body})
     .then(function(r){if(!r.ok)throw new Error("API ("+r.status+")");return r.json();})
     .then(function(d){cb(d.choices&&d.choices[0]?d.choices[0].message.content:"");})
@@ -261,20 +303,19 @@ function callMistral(sys,prompt,cb){
 function busy(on){var bs=document.querySelectorAll("#work button");for(var i=0;i<bs.length;i++){if(on)bs[i].classList.add("spin");else bs[i].classList.remove("spin");}}
 
 // ============================= Prompts =============================
-function P(){ // prompts selon la langue du roman
+function P(){
  var fr=cur().nlang!=="en";
- var W=fr?"Écris en français":"Write in English.";
  return {
-  author:fr?"Tu es un romancier professionnel. Écris en français, prose soignée, sans commentaires.":"You are a professional novelist. Write in English, polished prose, no commentary.",
+  author:fr?"Tu es un romancier professionnel. Écris en français, prose soignée et DENSE : développe les scènes concrètement (actions, sensations, décor, sous-texte), montre au lieu de raconter, évite les formules creuses, les répétitions et le remplissage. Sans commentaire autour du texte."
+           :"You are a professional novelist. Write in English, polished and DENSE prose: develop scenes concretely (actions, sensations, setting, subtext), show rather than tell, avoid empty phrases, repetitions and filler. No commentary around the text.",
   pro:fr?"Tu es un auteur professionnel. Réponds en français.":"You are a professional author. Answer in English.",
-  pitch:fr?"Propose un pitch percutant (5-6 phrases) pour un roman de GENRE intitulé \"TITRE\". Pièges, enjeux, promesse émotionnelle. Texte seul.":"Propose a compelling pitch (5-6 sentences) for a GENRE novel titled \"TITRE\". Traps, stakes, emotional promise. Text only.",
   pitches:fr?"Propose 3 pitchs distincts et percutants (5-6 phrases chacun) pour un roman de GENRE intitulé \"TITRE\". Chaque pitch doit explorer une direction radicalement différente (angle narratif, ton, type d'enjeux). Réponds STRICTEMENT en JSON valide, sans texte autour : {\"pitches\":[\"pitch 1\",\"pitch 2\",\"pitch 3\"]}":"Propose 3 distinct, compelling pitches (5-6 sentences each) for a GENRE novel titled \"TITRE\". Each pitch must explore a radically different direction (narrative angle, tone, type of stakes). Answer STRICTLY as valid JSON, nothing around it: {\"pitches\":[\"pitch 1\",\"pitch 2\",\"pitch 3\"]}",
-  plan:fr?"Construis le plan détaillé de ce roman en N chapitres, structure en trois actes. IMPÉRATIF : une seule ligne par chapitre, au format exact \"Chapitre N : Titre — Résumé de 3-4 phrases\".":"Build a detailed outline for this novel in N chapters, three-act structure. MANDATORY: one line per chapter, exact format \"Chapter N: Title — 3-4 sentence summary\".",
-  pers:fr?"Crée 4 personnages clés pour ce roman. Réponds STRICTEMENT en JSON valide, sans texte autour : {\"characters\":[{\"name\":\"\",\"role\":\"protagoniste/antagoniste/secondaire\",\"description\":\"physique, caractère, motivation, arc en 3-4 phrases\"}]}":"Create 4 key characters for this novel. Answer STRICTLY as valid JSON, nothing around it: {\"characters\":[{\"name\":\"\",\"role\":\"protagonist/antagonist/secondary\",\"description\":\"appearance, personality, motivation, arc in 3-4 sentences\"}]}",
+  pers:fr?"Crée 4 personnages clés pour ce roman. Réponds STRICTEMENT en JSON valide, sans texte autour : {\"characters\":[{\"name\":\"\",\"role\":\"protagoniste/antagoniste/secondaire\",\"description\":\"physique, caractère, motivation, arc en 3-4 phrases\"}]}":"Create 4 key characters for this novel. Answer STRICTELY as valid JSON, nothing around it: {\"characters\":[{\"name\":\"\",\"role\":\"protagonist/antagonist/secondary\",\"description\":\"appearance, personality, motivation, arc in 3-4 sentences\"}]}",
   world:fr?"Décris l'univers de ce roman : cadre géographique, époque, règles du monde (magie/technologie/société), atmosphère. 300 mots environ.":"Describe this novel's world: geography, era, world rules (magic/technology/society), atmosphere. About 300 words.",
-  full:fr?function(c){return "Écris le chapitre complet « "+c.title+" » (1500-2000 mots). Résumé attendu : "+(c.summary||"libre")+". Termine sur un hook.";}
-        :function(c){return "Write the full chapter \""+c.title+"\" (1500-2000 words). Expected summary: "+(c.summary||"free")+". End on a hook.";},
-  suite:fr?"Continue ce chapitre avec 400 mots supplémentaires, dans le même style.":"Continue this chapter with 400 more words, same style.",
+  plan:fr?"Construis le plan détaillé de ce roman en N chapitres, structure en trois actes. IMPÉRATIF : une seule ligne par chapitre, au format exact \"Chapitre N : Titre — Résumé de 3-4 phrases\".":"Build a detailed outline for this novel in N chapters, three-act structure. MANDATORY: one line per chapter, exact format \"Chapter N: Title — 3-4 sentence summary\".",
+  full:fr?function(c){return "Écris le chapitre complet « "+c.title+" » ("+chlenWords()+"). Résumé attendu : "+(c.summary||"libre")+". Développe pleinement chaque scène. Termine sur un hook.";}
+        :function(c){return "Write the full chapter \""+c.title+"\" ("+chlenWords()+"). Expected summary: "+(c.summary||"free")+". Fully develop every scene. End on a hook.";},
+  suite:fr?"Continue ce chapitre avec environ 1000 mots supplémentaires, dans le même style dense.":"Continue this chapter with about 1000 more words, same dense style.",
   notes:fr?function(n){return n?"Instructions de l'auteur : "+n+".":"";}
         :function(n){return n?"Author instructions: "+n+".":"";},
   rw:{darker:fr?"Réécris ce chapitre dans une atmosphère plus sombre et oppressante, en gardant les événements.":"Rewrite this chapter with a darker, heavier atmosphere, keeping the events.",
@@ -282,30 +323,35 @@ function P(){ // prompts selon la langue du roman
       short:fr?"Condense ce chapitre d'un tiers : rythme vif, supprime le superflu, garde les événements clés.":"Cut this chapter by a third: brisk pace, trim the fat, keep the key events.",
       descr:fr?"Enrichis ce chapitre de descriptions sensorielles et d'atmosphère, en gardant les événements.":"Enrich this chapter with sensory descriptions and atmosphere, keeping the events.",
       tense:fr?"Réécris ce chapitre en montant fortement la tension dramatique, en gardant les événements.":"Rewrite this chapter, dramatically raising the tension, keeping the events."},
-  ctx:fr?{t:"Titre",g:"Genre",s:"Style",p:"Pitch",c:"Personnages",w:"Univers",done:"Rappel des chapitres déjà écrits :",none:"(aucun)",curc:"Chapitre actuel :",notw:"(pas encore écrit)",noC:"(aucun)"}
-       :{t:"Title",g:"Genre",s:"Style",p:"Pitch",c:"Characters",w:"World",done:"Reminder of chapters already written:",none:"(none)",curc:"Current chapter:",notw:"(not written yet)",noC:"(none)"}
+  ctx:fr?{t:"Titre",g:"Genre",s:"Style",p:"Pitch",c:"Personnages",w:"Univers",done:"Rappel des derniers chapitres écrits :",none:"(aucun)",curc:"Chapitre actuel :",notw:"(pas encore écrit)",noC:"(aucun)"}
+       :{t:"Title",g:"Genre",s:"Style",p:"Pitch",c:"Characters",w:"World",done:"Reminder of the last chapters written:",none:"(none)",curc:"Current chapter:",notw:"(not written yet)",noC:"(none)"}
  };}
+function chlenWords(){
+ var p=cur(),fr=p.nlang!=="en",w=p.chlen||"std";
+ var map={std:fr?"1500-2000 mots":"1500-2000 words",long:fr?"2500-3500 mots":"2500-3500 words",xlong:fr?"4000 mots et plus":"4000 words and more"};
+ return map[w]||map.std;
+}
 function context(){
  var p=cur(),x=P().ctx;
- var c=p.characters.map(function(ch){return ch.name+" ("+label([{v:"protagoniste",fr:"protagoniste",en:"protagonist"},{v:"antagoniste",fr:"antagoniste",en:"antagonist"},{v:"secondaire",fr:"secondaire",en:"secondary"},{v:"mentor",fr:"mentor",en:"mentor"}],ch.role)+") : "+ch.description;}).join("\n");
+ var c=p.characters.map(function(ch){return ch.name+" ("+ch.role+") : "+ch.description;}).join("\n");
  return x.t+" : "+(p.title||"("+(L==="en"?"untitled":"non défini")+")")+"\n"+x.g+" : "+label(GENRES,p.genre)+"\n"+x.s+" : "+label(STYLES,p.style)+"\n"+x.p+" : "+p.pitch+"\n\n"+x.c+" :\n"+(c||x.noC)+"\n\n"+x.w+" :\n"+(p.world||x.noC);
 }
 
 // ============================= Rendu =============================
 function applyI18n(){
   document.documentElement.lang=L;
-  var map={tagline:1,heroTitle:1,heroDesc:1,heroHint:1,planHint:1,projects:1,settings:1,lTitle:1,lGenre:1,lStyle:1,lNlang:1,lPitch:1,lNCh:1,hProjet:1,hPlan:1,hPerso:1,hMonde:1,hRedac:1,lGoal:1,exports:1};
-  var texts={tagline:"tagline",heroTitle:"heroTitle",heroDesc:"heroDesc",heroHint:"heroHint",planHint:"planHint",projects:"projects",settings:"settings",lTitle:"lTitle",lGenre:"lGenre",lStyle:"lStyle",lNlang:"lNlang",lPitch:"lPitch",lNCh:"lNCh",hProjet:"hProjet",hPlan:"hPlan",hPerso:"hPerso",hMonde:"hMonde",hRedac:"hRedac",lGoal:"lGoal",exports:"exports"};
-  for(var id in texts){$("t-"+id).textContent=t(texts[id]);}
+  var ids={tagline:"tagline",heroOverline:"heroOverline",heroTitle:"heroTitle",heroDesc:"heroDesc",heroHint:"heroHint",planHint:"planHint",projects:"projects",settings:"settings",lTitle:"lTitle",lGenre:"lGenre",lStyle:"lStyle",lNlang:"lNlang",lPitch:"lPitch",lNCh:"lNCh",hProjet:"hProjet",hPlan:"hPlan",hPerso:"hPerso",hMonde:"hMonde",hRedac:"hRedac",lGoal:"lGoal",lChLen:"lChLen",exports:"exports"};
+  for(var id in ids){$("t-"+id).textContent=t(ids[id]);}
   $("t-tab1").textContent=t("tab1");$("t-tab2").textContent=t("tab2");$("t-tab3").textContent=t("tab3");$("t-tab4").textContent=t("tab4");$("t-tab5").textContent=t("tab5");
   $("apikey").placeholder=t("keyPh");
   $("t-pitchHint").textContent=t("pitchHint");
   $("hero-start").textContent=t("heroStart");$("hero-load").textContent=t("heroLoad");
   $("hero-title").placeholder=t("heroTitlePh");
+  $("footer").textContent=t("footer");
   $("b-new").textContent=t("bNew");$("b-saveproj").textContent=t("bSaveproj");$("b-import").textContent=t("bImport");$("b-delproj").textContent=t("bDelete");
   $("b-pitch").textContent=t("bPitch");$("b-plan").textContent=t("bPlan");$("b-perso").textContent=t("bPerso");$("b-perso-add").textContent=t("bAddPerso");$("b-monde").textContent=t("bMonde");
   $("hero-feats").innerHTML="";
-  [t("feat1"),t("feat2"),t("feat3"),t("feat4")].forEach(function(f){var s=document.createElement("span");s.textContent=f;$("hero-feats").appendChild(s);});
+  [t("feat1"),t("feat2"),t("feat3"),t("feat4")].forEach(function(f){var s=document.createElement("div");s.className="feat";s.textContent=f;$("hero-feats").appendChild(s);});
   $("btn-fr").classList.toggle("active",L==="fr");
   $("btn-en").classList.toggle("active",L==="en");
 }
@@ -319,14 +365,15 @@ function renderWorkspace(){
   $("hero").style.display=has?"none":"block";
   $("work").style.display=has?"block":"none";
   if(!has)return;
-  // sélecteur projets
   var sel=$("projSel");sel.innerHTML="";
-  DB.projects.forEach(function(pr){var o=document.createElement("option");o.value=pr.id;o.textContent=pr.title||t("bNew").slice(2)||"…";if(pr.id===DB.current)o.selected=true;sel.appendChild(o);});
+  DB.projects.forEach(function(pr){var o=document.createElement("option");o.value=pr.id;o.textContent=pr.title||"…";if(pr.id===DB.current)o.selected=true;sel.appendChild(o);});
   sel.onchange=function(){DB.current=this.value;save();renderAll();};
-  // champs
   fillSelect($("genre"),GENRES,p.genre);fillSelect($("style"),STYLES,p.style);
   var nl=$("nlang");nl.innerHTML="";[["fr","Français"],["en","English"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=a[1];if(a[0]===p.nlang)o.selected=true;nl.appendChild(o);});
   fillSelect($("hero-genre"),GENRES,p.genre);
+  var cl=$("chlen");cl.innerHTML="";
+  [["std","chStd"],["long","chLong"],["xlong","chXLong"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=t(a[1]);if((p.chlen||"std")===a[0])o.selected=true;cl.appendChild(o);});
+  cl.onchange=function(){p.chlen=this.value;save();};
   $("title").value=p.title;$("pitch").value=p.pitch;$("plan").value=p.plan;$("world").value=p.world;
   $("nch").value=Math.max(3,Math.min(40,p.chapters.length||12));
   $("goal").value=p.goal||50000;
@@ -370,7 +417,7 @@ function renderChaps(){
   var p=cur(),d=$("chaps");d.innerHTML="";
   if(!p.chapters.length){d.innerHTML="<p class=\"hint\">"+t("noChap")+"</p>";return;}
   p.chapters.forEach(function(c,i){
-    var w=document.createElement("div");w.className="chap";
+    var w=document.createElement("div");w.className="card";
     var h=document.createElement("h3");h.textContent=(i+1)+". "+c.title+" ";
     var b=document.createElement("span");b.className="badge"+(c.status==="redige"||c.status==="revu"?" ok":"");b.textContent=c.status;
     var wc=document.createElement("span");wc.className="wc";wc.textContent=" · "+wordCount(c).toLocaleString()+" "+t("words");
@@ -379,8 +426,8 @@ function renderChaps(){
     function mkBtn(txt,fn,ghost){var bt=document.createElement("button");bt.className=(ghost?"ghost ":"")+"small";bt.textContent=txt;bt.onclick=fn;btns.appendChild(bt);}
     mkBtn(c.text?t("bRegen"):t("bWrite"),function(){genChap(i,"full");});
     if(c.text){
-      mkBtn(t("bCont"),function(){genChap(i,"suite");},true);
-      var sel=document.createElement("select");sel.className="small";sel.style.cssText="max-width:180px;padding:5px";
+      mkBtn(t("bCont"),function(){genChap(i,"suite");});
+      var sel=document.createElement("select");sel.style.cssText="max-width:180px;padding:6px";
       var o=document.createElement("option");o.value="";o.textContent=t("selRewrite");sel.appendChild(o);
       [["darker","rwDarker"],["dialog","rwDialog"],["short","rwShort"],["descr","rwDescr"],["tense","rwTense"]].forEach(function(a){var oo=document.createElement("option");oo.value=a[0];oo.textContent=t(a[1]);sel.appendChild(oo);});
       btns.appendChild(sel);
@@ -392,7 +439,7 @@ function renderChaps(){
     var notes=document.createElement("input");notes.style.cssText="width:100%;margin-bottom:8px;font-size:.8rem";notes.placeholder=t("notesPh");notes.value=c.notes||"";
     notes.oninput=function(){c.notes=this.value;save();};
     w.appendChild(notes);
-    var ta=document.createElement("textarea");ta.rows=c.text?14:2;ta.value=c.text;ta.placeholder="…";
+    var ta=document.createElement("textarea");ta.rows=c.text?14:2;ta.value=c.text;ta.className="serif";ta.placeholder="…";
     ta.oninput=function(){c.text=this.value;c.status=this.value?"redige":"planifie";save();updateStats();renderChapsSoon();};
     w.appendChild(ta);d.appendChild(w);
   });
@@ -404,21 +451,23 @@ function renderChapsSoon(){clearTimeout(rcTimer);rcTimer=setTimeout(renderChaps,
 function genChap(i,mode){
   var p=cur(),c=p.chapters[i],pr=P();
   var opt=mode.indexOf("rw:")===0?mode.slice(3):null;
-  var done=p.chapters.filter(function(x,j){return j!==i&&x.text;}).map(function(x){return "« "+x.title+" » : "+x.text.slice(0,400)+"…";}).join("\n\n");
+  // contexte élargi : les 3 derniers chapitres rédigés, en version longue
+  var written=p.chapters.filter(function(x,j){return j!==i&&x.text;});
+  var last3=written.slice(-3).map(function(x){return "« "+x.title+" » : "+x.text.slice(0,1500)+"…";}).join("\n\n");
   var ask;
   if(mode==="full")ask=pr.full(c)+" "+pr.notes(c.notes);
   else if(mode==="suite")ask=pr.suite+" "+pr.notes(c.notes);
   else ask=pr.rw[opt]+" "+pr.notes(c.notes);
   busy(true);
   callMistral(pr.author,
-    context()+"\n\n"+pr.ctx.done+"\n"+(done||pr.ctx.none)+"\n\n"+pr.ctx.curc+"\n"+(c.text||pr.ctx.notw)+"\n\n"+ask,
+    context()+"\n\n"+pr.ctx.done+"\n"+(last3||pr.ctx.none)+"\n\n"+pr.ctx.curc+"\n"+(c.text||pr.ctx.notw)+"\n\n"+ask,
     function(txt){
       if(mode==="full"||opt)c.text=txt;else c.text=c.text+"\n\n"+txt;
       c.status="redige";save();renderChaps();updateStats();busy(false);
     });
 }
 
-// ---- Générateurs réutilisables (chaînage possible) ----
+// ---- Générateurs réutilisables ----
 function genPerso(cb){var p=cur(),pr=P();
   callMistral(pr.pro,context()+"\n\n"+P().pers,
     function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
@@ -449,10 +498,10 @@ function renderPitchOptions(){
   var opts=p.pitchOptions||[];
   $("t-pitchHint").style.display=opts.length?"block":"none";
   opts.forEach(function(txt,i){
-    var card=document.createElement("div");card.className="perso";
-    var h=document.createElement("p");h.style.cssText="font-family:system-ui,sans-serif;font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:6px";
+    var card=document.createElement("div");card.className="card";
+    var h=document.createElement("p");h.style.cssText="font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:6px";
     h.textContent=(L==="en"?"Pitch ":"Pitch ")+(i+1);
-    var body=document.createElement("p");body.style.cssText="margin-bottom:10px";body.textContent=txt;
+    var body=document.createElement("p");body.style.cssText="margin-bottom:12px";body.className="serif";body.textContent=txt;
     var b=document.createElement("button");b.className="small";b.textContent=t("choose");
     b.onclick=function(){choosePitch(i);};
     card.appendChild(h);card.appendChild(body);card.appendChild(b);d.appendChild(card);
@@ -496,7 +545,6 @@ $("apikey").oninput=function(){localStorage.setItem("roman-ia-key",this.value);k
 $("model").onchange=function(){localStorage.setItem("roman-ia-model",this.value);};
 function keyBadge(){$("keybadge").textContent=$("apikey").value?t("connected"):t("keyNeeded");$("keybadge").className=$("apikey").value?"badge ok":"badge";}
 
-// Projet
 $("title").oninput=function(){cur().title=this.value;save();};
 $("genre").onchange=function(){cur().genre=this.value;save();};
 $("style").onchange=function(){cur().style=this.value;save();};
@@ -507,17 +555,15 @@ $("world").oninput=function(){cur().world=this.value;save();};
 $("goal").oninput=function(){cur().goal=parseInt(this.value)||50000;save();updateStats();};
 $("nch").oninput=function(){};
 
-// Hero
-$("hero-start").onclick=function(){var p=newProject($("hero-title").value.trim(),$("hero-genre").value);renderAll();$("title").focus();};
+$("hero-start").onclick=function(){newProject($("hero-title").value.trim(),$("hero-genre").value);renderAll();$("title").focus();};
 $("hero-load").onclick=function(){$("importFile").click();};
 
-// Projets
 $("b-new").onclick=function(){newProject("","fantasy");renderAll();};
 $("b-delproj").onclick=function(){if(!confirm(t("deleteConfirm")))return;
   DB.projects=DB.projects.filter(function(p){return p.id!==DB.current;});
   DB.current=DB.projects.length?DB.projects[0].id:null;save();renderAll();};
 $("b-saveproj").onclick=function(){
-  var blob=new Blob([JSON.stringify({app:"atelier-roman-ia",version:2,project:cur()},null,1)],{type:"application/json"});
+  var blob=new Blob([JSON.stringify({app:"atelier-roman-ia",version:3,project:cur()},null,1)],{type:"application/json"});
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=slug(cur().title)+".json";a.click();};
 $("b-import").onclick=function(){$("importFile").click();};
 $("importFile").onchange=function(){
@@ -528,7 +574,6 @@ $("importFile").onchange=function(){
   }catch(e){showErr(t("errJson"));}};
   r.readAsText(f);this.value="";};
 
-// Générateurs
 $("b-pitch").onclick=function(){busy(true);genPitches(function(){busy(false);});};
 $("b-plan").onclick=function(){busy(true);genPlan(function(){busy(false);});};
 $("b-perso").onclick=function(){busy(true);genPerso(function(){busy(false);});};
@@ -550,7 +595,7 @@ function strBytes(s){var b=encodeURIComponent(s).replace(/%([0-9A-F]{2})/g,funct
   var out=new Uint8Array(b.length);for(var i=0;i<b.length;i++)out[i]=b.charCodeAt(i);return out;}
 function u32(arr,v){arr.push(v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255);}
 function u16(arr,v){arr.push(v&255,(v>>>8)&255);}
-function makeZip(files){ // files: [{name, data:Uint8Array}]
+function makeZip(files){
   var parts=[],central=[],offset=0,count=files.length;
   files.forEach(function(f){
     var crc=crc32(f.data),nameB=strBytes(f.name),hdr=[];
