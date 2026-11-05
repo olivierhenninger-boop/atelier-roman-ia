@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atelier Roman IA</title>
+<style>
+:root{font-family:Georgia,'Times New Roman',serif;background:#faf9f7;color:#292524}
+*{box-sizing:border-box;margin:0;padding:0}
+body{max-width:960px;margin:0 auto;padding:24px}
+h1{color:#92400e;font-size:1.9rem;margin-bottom:4px}
+.sub{color:#78716c;font-size:.9rem;margin-bottom:20px;font-family:system-ui,sans-serif}
+h2{font-size:1.3rem;color:#92400e;border-bottom:2px solid #f5e6d3;padding-bottom:8px;margin-bottom:16px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:14px;font-family:system-ui,sans-serif;font-size:.85rem}
+input,select,textarea,button{font-family:system-ui,sans-serif;font-size:.9rem;border-radius:8px;border:1px solid #d6d3d1;padding:8px 10px;background:#fff}
+input[type=password]{flex:1;min-width:200px}
+textarea{width:100%;line-height:1.6;font-family:Georgia,serif}
+label{font-family:system-ui,sans-serif;font-size:.85rem;font-weight:600;display:block;margin:10px 0 4px;color:#57534e}
+button{cursor:pointer;background:#b45309;color:#fff;border:none;font-weight:600;padding:8px 14px}
+button:hover{background:#92400e}
+button.ghost{background:transparent;color:#78716c;border:1px solid #d6d3d1}
+button.small{padding:5px 10px;font-size:.8rem}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;font-family:system-ui,sans-serif}
+.tab{padding:8px 14px;border-radius:20px;border:1px solid #d6d3d1;background:#fff;cursor:pointer;font-size:.85rem;font-weight:600;color:#78716c}
+.tab.active{background:#b45309;color:#fff;border-color:#b45309}
+.panel{display:none;background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.panel.active{display:block}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:200px}
+.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px;border-radius:8px;margin-bottom:12px;font-family:system-ui,sans-serif;font-size:.85rem;display:none}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72rem;font-family:system-ui,sans-serif;background:#f5f5f4;color:#57534e;margin-left:8px}
+.badge.ok{background:#15803d;color:#fff}
+.chap{border:1px solid #e7e5e4;border-radius:10px;padding:14px;margin-bottom:12px}
+.chap h3{font-size:1.05rem;margin-bottom:8px}
+.chap .sum{color:#78716c;font-style:italic;font-size:.85rem;margin-bottom:8px}
+.perso{border:1px solid #e7e5e4;border-radius:10px;padding:12px;margin-bottom:10px}
+.spin{opacity:.6;pointer-events:none}
+.hint{font-size:.78rem;color:#a8a29e;font-family:system-ui,sans-serif;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>📖 Atelier Roman IA</h1>
+<p class="sub">Créez votre roman avec l'IA : pitch, plan, personnages, univers et rédaction chapitre par chapitre. Tout est sauvegardé automatiquement dans votre navigateur.</p>
+
+<div class="bar">
+  <strong>🔑 Connexion IA</strong>
+  <input type="password" id="apikey" placeholder="Clé API Mistral (console.mistral.ai)">
+  <select id="model">
+    <option value="mistral-large-latest">mistral-large-latest</option>
+    <option value="mistral-medium-latest">mistral-medium-latest</option>
+    <option value="mistral-small-latest">mistral-small-latest</option>
+    <option value="open-mistral-nemo">open-mistral-nemo</option>
+  </select>
+  <span class="badge" id="keybadge">Clé requise</span>
+</div>
+<div class="err" id="err"></div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-t="projet">① Projet</div>
+  <div class="tab" data-t="plan">② Plan</div>
+  <div class="tab" data-t="perso">③ Personnages</div>
+  <div class="tab" data-t="monde">④ Univers</div>
+  <div class="tab" data-t="redac">⑤ Rédaction</div>
+</div>
+
+<div class="panel active" id="p-projet">
+  <h2>Définissez votre roman</h2>
+  <label>Titre</label><input id="title" style="width:100%" placeholder="Le Dernier Relais">
+  <div class="row">
+    <div><label>Genre</label>
+      <select id="genre" style="width:100%"><option>Fantasy</option><option>Science-fiction</option><option>Policier</option><option>Thriller</option><option>Romance</option><option>Historique</option><option>Horreur</option><option>Aventure</option><option>Contemporain</option><option>Médiéval</option></select></div>
+    <div><label>Style d'écriture</label>
+      <select id="style" style="width:100%"><option>Roman classique, 3e personne</option><option>À la première personne</option><option>Style littéraire poétique</option><option>Style jeune adulte</option><option>Style noir et punchy</option><option>Humoristique</option></select></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <label style="margin:0">Pitch / idée de départ</label>
+    <button id="b-pitch">✨ Générer un pitch</button>
+  </div>
+  <textarea id="pitch" rows="5" style="margin-top:4px" placeholder="Décrivez votre idée, ou laissez l'IA la proposer..."></textarea>
+</div>
+
+<div class="panel" id="p-plan">
+  <h2>Plan du roman</h2>
+  <div class="row" style="align-items:center">
+    <div style="flex:0 0 auto"><label style="margin:0">Chapitres :</label></div>
+    <div style="flex:0 0 80px"><input type="number" id="nch" value="12" min="3" max="40"></div>
+    <div style="flex:0 0 auto"><button id="b-plan">✨ Générer le plan</button></div>
+  </div>
+  <textarea id="plan" rows="16" style="margin-top:10px" placeholder="Le plan détaillé apparaîtra ici, modifiable librement..."></textarea>
+  <p class="hint">Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction.</p>
+</div>
+
+<div class="panel" id="p-perso">
+  <h2>Personnages</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <button id="b-perso">✨ Générer 4 personnages</button>
+    <button class="ghost" id="b-perso-add">+ Ajouter manuellement</button>
+  </div>
+  <div id="persos"></div>
+</div>
+
+<div class="panel" id="p-monde">
+  <h2>Univers &amp; cadre</h2>
+  <button id="b-monde">✨ Générer l'univers</button>
+  <textarea id="world" rows="14" style="margin-top:10px" placeholder="Lieux, époque, règles du monde, atmosphère..."></textarea>
+</div>
+
+<div class="panel" id="p-redac">
+  <h2>Rédaction</h2>
+  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;font-family:system-ui,sans-serif;font-size:.85rem;color:#78716c">
+    <span id="stats">0 chapitre · 0 mots</span>
+    <button class="ghost" id="b-export">⬇ Exporter le roman (.txt)</button>
+  </div>
+  <div id="chaps"></div>
+</div>
+
+<script>
+// ---------- État ----------
+var LS="roman-ia";
+var S={title:"",genre:"Fantasy",style:"Roman classique, 3e personne",pitch:"",plan:"",world:"",characters:[],chapters:[]};
+try{var sv=localStorage.getItem(LS);if(sv){var o=JSON.parse(sv);for(var k in o)S[k]=o[k];}}catch(e){}
+function save(){localStorage.setItem(LS,JSON.stringify(S));}
+function $(id){return document.getElementById(id);}
+function showErr(m){var e=$("err");e.textContent=m;e.style.display="block";setTimeout(function(){e.style.display="none";},8000);}
+function upd(){save();renderPersos();renderChaps();}
+
+$("apikey").value=localStorage.getItem(LS+"-key")||"";
+$("model").value=localStorage.getItem(LS+"-model")||"mistral-large-latest";
+$("apikey").oninput=function(){localStorage.setItem(LS+"-key",this.value);keyBadge();};
+$("model").onchange=function(){localStorage.setItem(LS+"-model",this.value);};
+function keyBadge(){$("keybadge").textContent=$("apikey").value?"Connecté":"Clé requise";$("keybadge").className=$("apikey").value?"badge ok":"badge";}
+keyBadge();
+
+// ---------- Onglets ----------
+var tabs=document.querySelectorAll(".tab");
+for(var i=0;i<tabs.length;i++){tabs[i].onclick=function(){
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
+  document.querySelectorAll(".panel").forEach(function(p){p.classList.remove("active");});
+  this.classList.add("active");$("p-"+this.dataset.t).classList.add("active");};}
+
+// ---------- Champs projet ----------
+$("title").value=S.title;$("genre").value=S.genre;$("style").value=S.style;
+$("pitch").value=S.pitch;$("plan").value=S.plan;$("world").value=S.world;$("nch").value=Math.max(3,Math.min(40,S.chapters.length||12));
+$("title").oninput=function(){S.title=this.value;save();};
+$("genre").onchange=function(){S.genre=this.value;save();};
+$("style").onchange=function(){S.style=this.value;save();};
+$("pitch").oninput=function(){S.pitch=this.value;save();};
+$("plan").oninput=function(){S.plan=this.value;save();};
+$("world").oninput=function(){S.world=this.value;save();};
+
+// ---------- API Mistral ----------
+function callMistral(sys,prompt,cb){
+  var key=$("apikey").value;if(!key){showErr("Ajoutez votre clé API Mistral en haut de page.");return false;}
+  var body=JSON.stringify({model:$("model").value,messages:[{role:"system",content:sys},{role:"user",content:prompt}],temperature:0.8});
+  fetch("https://api.mistral.ai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:body})
+    .then(function(r){if(!r.ok)throw new Error("Erreur API ("+r.status+")");return r.json();})
+    .then(function(d){cb(d.choices&&d.choices[0]?d.choices[0].message.content:"");})
+    .catch(function(e){showErr(e.message);busy(false);});
+  return true;
+}
+function busy(on){document.querySelectorAll("button").forEach(function(b){if(on)b.classList.add("spin");else b.classList.remove("spin");});}
+function context(){
+  var c=S.characters.map(function(p){return p.name+" ("+p.role+") : "+p.description;}).join("\n");
+  return "Titre : "+(S.title||"(non défini)")+"\nGenre : "+S.genre+"\nStyle : "+S.style+"\nPitch : "+S.pitch+"\n\nPersonnages :\n"+(c||"(aucun)")+"\n\nUnivers :\n"+(S.world||"(non défini)");
+}
+
+// ---------- Générateurs ----------
+$("b-pitch").onclick=function(){busy(true);callMistral("Tu es un auteur professionnel. Réponds en français.",
+  "Propose un pitch percutant (5-6 phrases) pour un roman de "+S.genre+" intitulé \""+S.title+"\". Pièges, enjeux, promesse émotionnelle. Texte seul.",
+  function(t){S.pitch=t;$("pitch").value=t;save();busy(false);});};
+
+$("b-plan").onclick=function(){busy(true);var n=parseInt($("nch").value)||12;callMistral("Tu es un auteur professionnel. Réponds en français.",
+  context()+"\n\nConstruis le plan détaillé de ce roman en "+n+" chapitres. Pour chaque chapitre : un titre et un résumé de 3-4 phrases. Structure en trois actes. Commence chaque chapitre par \"Chapitre N : Titre\".",
+  function(t){S.plan=t;$("plan").value=t;
+    var chs=[],re=/Chapitre\s*(\d+)\s*:\s*(.+)/g,m;
+    while((m=re.exec(t))!==null){chs.push({title:m[2].trim(),summary:"",text:"",status:"planifie"});}
+    if(chs.length){S.chapters=chs;}
+    save();renderChaps();busy(false);});};
+
+$("b-perso").onclick=function(){busy(true);callMistral("Tu es un auteur professionnel. Réponds STRICTEMENT en JSON valide, sans texte autour.",
+  context()+"\n\nCrée 4 personnages clés pour ce roman. Réponds en JSON : {\"characters\":[{\"name\":\"\",\"role\":\"protagoniste/antagoniste/secondaire\",\"description\":\"physique, caractère, motivation, arc en 3-4 phrases\"}]}",
+  function(t){try{var mm=t.match(/\{[\s\S]*\}/);var p=JSON.parse(mm?mm[0]:t);
+    (p.characters||[]).forEach(function(c){S.characters.push({name:c.name||"",role:c.role||"secondaire",description:c.description||""});});
+    upd();}catch(e){showErr("Format IA illisible, réessayez.");}busy(false);});};
+
+$("b-perso-add").onclick=function(){S.characters.push({name:"Nouveau personnage",role:"secondaire",description:""});upd();};
+
+$("b-monde").onclick=function(){busy(true);callMistral("Tu es un auteur professionnel. Réponds en français.",
+  context()+"\n\nDécris l'univers de ce roman : cadre géographique, époque, règles du monde (magie/technologie/société), atmosphère. 300 mots environ.",
+  function(t){S.world=t;$("world").value=t;save();busy(false);});};
+
+// ---------- Personnages (rendu) ----------
+function renderPersos(){
+  var d=$("persos");d.innerHTML="";
+  if(!S.characters.length){d.innerHTML="<p class=\"hint\">Aucun personnage pour l'instant.</p>";return;}
+  S.characters.forEach(function(c,i){
+    var w=document.createElement("div");w.className="perso";
+    w.innerHTML="<div class=\"row\"><input value=\"\"></div><textarea rows=\"3\" placeholder=\"Caractère, physique, motivation...\" style=\"margin-top:6px\"></textarea>";
+    var inp=w.querySelector("input"),ta=w.querySelector("textarea");
+    var sel=document.createElement("select");
+    ["protagoniste","antagoniste","secondaire","mentor"].forEach(function(r){var o=document.createElement("option");o.value=r;o.textContent=r[0].toUpperCase()+r.slice(1);if(c.role===r)o.selected=true;sel.appendChild(o);});
+    var del=document.createElement("button");del.className="ghost small";del.textContent="🗑";
+    w.querySelector(".row").appendChild(sel);w.querySelector(".row").appendChild(del);
+    inp.value=c.name;ta.value=c.description;
+    inp.oninput=function(){S.characters[i].name=this.value;save();};
+    sel.onchange=function(){S.characters[i].role=this.value;save();};
+    ta.oninput=function(){S.characters[i].description=this.value;save();};
+    del.onclick=function(){S.characters.splice(i,1);upd();};
+    d.appendChild(w);
+  });
+}
+
+// ---------- Chapitres (rendu) ----------
+function wordCount(){return S.chapters.reduce(function(n,c){return n+(c.text?c.text.split(/\s+/).length:0);},0);}
+function renderChaps(){
+  var d=$("chaps");d.innerHTML="";
+  $("stats").textContent=S.chapters.length+" chapitre(s) · "+wordCount().toLocaleString("fr-FR")+" mots";
+  if(!S.chapters.length){d.innerHTML="<p class=\"hint\">Générez d'abord un plan (onglet ②) pour créer les chapitres.</p>";return;}
+  S.chapters.forEach(function(c,i){
+    var w=document.createElement("div");w.className="chap";
+    var h=document.createElement("h3");h.textContent=(i+1)+". "+c.title+" ";
+    var b=document.createElement("span");b.className="badge"+(c.status==="redige"?" ok":"");b.textContent=c.status;h.appendChild(b);
+    var btns=document.createElement("div");btns.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0";
+    function mkBtn(txt,fn,ghost){var bt=document.createElement("button");bt.className=(ghost?"ghost ":"")+"small";bt.textContent=txt;bt.onclick=fn;btns.appendChild(bt);}
+    mkBtn(c.text?"↻ Réécrire":"✨ Écrire le chapitre",function(){genChap(i,"full");});
+    if(c.text){
+      mkBtn("+ Suite",function(){genChap(i,"suite");},true);
+      mkBtn("Améliorer",function(){genChap(i,"ameliorer");},true);
+      mkBtn(c.status==="revu"?"Dé-réviser":"✓ Révisé",function(){S.chapters[i].status=S.chapters[i].status==="revu"?"redige":"revu";save();renderChaps();},true);
+    }
+    var sum=document.createElement("p");sum.className="sum";sum.textContent=c.summary||"";
+    var ta=document.createElement("textarea");ta.rows=c.text?14:2;ta.value=c.text;ta.placeholder="Le texte du chapitre...";
+    ta.oninput=function(){S.chapters[i].text=this.value;S.chapters[i].status=this.value?"redige":"planifie";save();$("stats").textContent=S.chapters.length+" chapitre(s) · "+wordCount().toLocaleString("fr-FR")+" mots";};
+    w.appendChild(h);w.appendChild(btns);if(c.summary)w.appendChild(sum);w.appendChild(ta);
+    d.appendChild(w);
+  });
+}
+function genChap(i,mode){
+  busy(true);var c=S.chapters[i];
+  var done=S.chapters.filter(function(x,j){return j!==i&&x.text;}).map(function(x){return "« "+x.title+" » : "+x.text.slice(0,400)+"...";}).join("\n\n");
+  var prompts={
+    full:"Écris le chapitre complet « "+c.title+" » (1500-2000 mots). Résumé attendu : "+(c.summary||"libre")+". Termine sur un hook.",
+    suite:"Continue ce chapitre avec 400 mots supplémentaires, dans le même style.",
+    ameliorer:"Réécris ce chapitre de façon plus vivante : dialogues percutants, SHOW don't tell, rythme. Garde les événements."};
+  callMistral("Tu es un romancier professionnel. Style : "+S.style+". Écris en français, prose soignée, sans commentaires.",
+    context()+"\n\nRappel des chapitres déjà écrits :\n"+(done||"(aucun)")+"\n\n"+prompts[mode]+"\n\nChapitre actuel :\n"+(c.text||"(pas encore écrit)"),
+    function(t){var nt=mode==="full"?t:(c.text+"\n\n"+t);S.chapters[i].text=nt;S.chapters[i].status="redige";save();renderChaps();busy(false);});
+}
+
+// ---------- Export ----------
+$("b-export").onclick=function(){
+  var body=S.title.toUpperCase()+"\n\n"+S.chapters.map(function(c){return "\n\n## "+c.title+"\n\n"+c.text;}).join("");
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([body],{type:"text/plain;charset=utf-8"}));
+  a.download=(S.title||"roman").replace(/\s+/g,"-").toLowerCase()+".txt";a.click();
+};
+
+renderPersos();renderChaps();
+</script>
+</body>
+</html>
