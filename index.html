@@ -125,6 +125,9 @@ select.wide{width:100%}
       <button id="b-pitch"></button>
     </div>
     <textarea id="pitch" rows="5" style="margin-top:4px"></textarea>
+    <div id="pitchOptions" style="margin-top:12px"></div>
+    <p class="hint" id="t-pitchHint" style="display:none;margin-top:10px"></p>
+    <div id="autoStatus" class="badge ok" style="display:none;margin-top:10px;font-family:system-ui,sans-serif;font-size:.85rem"></div>
   </div>
 
   <div class="panel" id="p-plan">
@@ -179,7 +182,9 @@ var T={
  settings:"Connexion IA",keyPh:"Clé API Mistral (console.mistral.ai)",keyNeeded:"Clé requise",connected:"Connecté",
  tab1:"① Projet",tab2:"② Plan",tab3:"③ Personnages",tab4:"④ Univers",tab5:"⑤ Rédaction",
  hProjet:"Définissez votre roman",lTitle:"Titre",lGenre:"Genre",lStyle:"Style d'écriture",lNlang:"Langue du roman",
- lPitch:"Pitch / idée de départ",bPitch:"✨ Générer un pitch",lNCh:"Chapitres :",bPlan:"✨ Générer le plan",
+ lPitch:"Pitch / idée de départ",bPitch:"✨ Générer 3 pitchs",pitchHint:"Sélectionnez un pitch : personnages, univers et plan seront générés automatiquement.",
+ choose:"✓ Utiliser ce pitch",auto1:"Étape 1/3 : personnages…",auto2:"Étape 2/3 : univers…",auto3:"Étape 3/3 : plan…",autoDone:"✅ Personnages, univers et plan générés ! Rédigez vos chapitres dans l'onglet ⑤.",
+ lNCh:"Chapitres :",bPlan:"✨ Générer le plan",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
@@ -200,7 +205,9 @@ var T={
  settings:"AI connection",keyPh:"Mistral API key (console.mistral.ai)",keyNeeded:"Key required",connected:"Connected",
  tab1:"① Project",tab2:"② Outline",tab3:"③ Characters",tab4:"④ World",tab5:"⑤ Writing",
  hProjet:"Define your novel",lTitle:"Title",lGenre:"Genre",lStyle:"Writing style",lNlang:"Novel language",
- lPitch:"Pitch / starting idea",bPitch:"✨ Generate a pitch",lNCh:"Chapters:",bPlan:"✨ Generate the outline",
+ lPitch:"Pitch / starting idea",bPitch:"✨ Generate 3 pitches",pitchHint:"Pick a pitch: characters, world and outline will be generated automatically.",
+ choose:"✓ Use this pitch",auto1:"Step 1/3: characters…",auto2:"Step 2/3: world…",auto3:"Step 3/3: outline…",autoDone:"✅ Characters, world and outline generated! Write your chapters in tab ⑤.",
+ lNCh:"Chapters:",bPlan:"✨ Generate the outline",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
@@ -261,6 +268,7 @@ function P(){ // prompts selon la langue du roman
   author:fr?"Tu es un romancier professionnel. Écris en français, prose soignée, sans commentaires.":"You are a professional novelist. Write in English, polished prose, no commentary.",
   pro:fr?"Tu es un auteur professionnel. Réponds en français.":"You are a professional author. Answer in English.",
   pitch:fr?"Propose un pitch percutant (5-6 phrases) pour un roman de GENRE intitulé \"TITRE\". Pièges, enjeux, promesse émotionnelle. Texte seul.":"Propose a compelling pitch (5-6 sentences) for a GENRE novel titled \"TITRE\". Traps, stakes, emotional promise. Text only.",
+  pitches:fr?"Propose 3 pitchs distincts et percutants (5-6 phrases chacun) pour un roman de GENRE intitulé \"TITRE\". Chaque pitch doit explorer une direction radicalement différente (angle narratif, ton, type d'enjeux). Réponds STRICTEMENT en JSON valide, sans texte autour : {\"pitches\":[\"pitch 1\",\"pitch 2\",\"pitch 3\"]}":"Propose 3 distinct, compelling pitches (5-6 sentences each) for a GENRE novel titled \"TITRE\". Each pitch must explore a radically different direction (narrative angle, tone, type of stakes). Answer STRICTLY as valid JSON, nothing around it: {\"pitches\":[\"pitch 1\",\"pitch 2\",\"pitch 3\"]}",
   plan:fr?"Construis le plan détaillé de ce roman en N chapitres, structure en trois actes. IMPÉRATIF : une seule ligne par chapitre, au format exact \"Chapitre N : Titre — Résumé de 3-4 phrases\".":"Build a detailed outline for this novel in N chapters, three-act structure. MANDATORY: one line per chapter, exact format \"Chapter N: Title — 3-4 sentence summary\".",
   pers:fr?"Crée 4 personnages clés pour ce roman. Réponds STRICTEMENT en JSON valide, sans texte autour : {\"characters\":[{\"name\":\"\",\"role\":\"protagoniste/antagoniste/secondaire\",\"description\":\"physique, caractère, motivation, arc en 3-4 phrases\"}]}":"Create 4 key characters for this novel. Answer STRICTLY as valid JSON, nothing around it: {\"characters\":[{\"name\":\"\",\"role\":\"protagonist/antagonist/secondary\",\"description\":\"appearance, personality, motivation, arc in 3-4 sentences\"}]}",
   world:fr?"Décris l'univers de ce roman : cadre géographique, époque, règles du monde (magie/technologie/société), atmosphère. 300 mots environ.":"Describe this novel's world: geography, era, world rules (magic/technology/society), atmosphere. About 300 words.",
@@ -291,6 +299,7 @@ function applyI18n(){
   for(var id in texts){$("t-"+id).textContent=t(texts[id]);}
   $("t-tab1").textContent=t("tab1");$("t-tab2").textContent=t("tab2");$("t-tab3").textContent=t("tab3");$("t-tab4").textContent=t("tab4");$("t-tab5").textContent=t("tab5");
   $("apikey").placeholder=t("keyPh");
+  $("t-pitchHint").textContent=t("pitchHint");
   $("hero-start").textContent=t("heroStart");$("hero-load").textContent=t("heroLoad");
   $("hero-title").placeholder=t("heroTitlePh");
   $("b-new").textContent=t("bNew");$("b-saveproj").textContent=t("bSaveproj");$("b-import").textContent=t("bImport");$("b-delproj").textContent=t("bDelete");
@@ -322,7 +331,7 @@ function renderWorkspace(){
   $("nch").value=Math.max(3,Math.min(40,p.chapters.length||12));
   $("goal").value=p.goal||50000;
   keyBadge();
-  renderPersos();renderChaps();updateStats();
+  renderPersos();renderChaps();updateStats();renderPitchOptions();
 }
 function renderAll(){applyI18n();renderWorkspace();}
 
@@ -409,6 +418,64 @@ function genChap(i,mode){
     });
 }
 
+// ---- Générateurs réutilisables (chaînage possible) ----
+function genPerso(cb){var p=cur(),pr=P();
+  callMistral(pr.pro,context()+"\n\n"+P().pers,
+    function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
+      (d.characters||[]).forEach(function(c){p.characters.push({name:c.name||"",role:c.role||"secondaire",description:c.description||""});});
+      save();renderPersos();cb&&cb(true);}catch(e){showErr(t("errJson"));busy(false);cb&&cb(false);}});}
+function genMonde(cb){var p=cur(),pr=P();
+  callMistral(pr.pro,context()+"\n\n"+P().world,
+    function(txt){p.world=txt;$("world").value=txt;save();cb&&cb(true);});}
+function genPlan(cb){var p=cur(),n=parseInt($("nch").value)||12;
+  callMistral(P().pro,context()+"\n\n"+P().plan.replace("N",""+n),
+    function(txt){p.plan=txt;$("plan").value=txt;
+      var chs=[],re=/Chapitre\s*(\d+)\s*[:：]\s*(.+)/g,m;
+      while((m=re.exec(txt))!==null){
+        var rest=m[2].trim(),parts=rest.split(/\s+[—–-]\s+/),title=parts[0].trim(),summary=parts.length>1?rest.slice(title.length).replace(/^\s*[—–-]\s*/,"").trim():"";
+        chs.push({title:title,summary:summary,notes:"",text:"",status:"planifie"});}
+      if(chs.length)p.chapters=chs;
+      save();renderChaps();updateStats();cb&&cb(true);});}
+function genPitches(cb){var p=cur(),pr=P();
+  callMistral(pr.pro,P().pitches.replace("GENRE",label(GENRES,p.genre)).replace("TITRE",p.title||"?"),
+    function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
+      var arr=(d.pitches||[]).filter(function(x){return typeof x==="string"&&x.trim();});
+      p.pitchOptions=arr.slice(0,3);save();renderPitchOptions();cb&&cb(true);}
+    catch(e){showErr(t("errJson"));busy(false);cb&&cb(false);}});}
+
+// ---- Cartes de pitchs ----
+function renderPitchOptions(){
+  var p=cur(),d=$("pitchOptions");if(!p||!d)return;d.innerHTML="";
+  var opts=p.pitchOptions||[];
+  $("t-pitchHint").style.display=opts.length?"block":"none";
+  opts.forEach(function(txt,i){
+    var card=document.createElement("div");card.className="perso";
+    var h=document.createElement("p");h.style.cssText="font-family:system-ui,sans-serif;font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:6px";
+    h.textContent=(L==="en"?"Pitch ":"Pitch ")+(i+1);
+    var body=document.createElement("p");body.style.cssText="margin-bottom:10px";body.textContent=txt;
+    var b=document.createElement("button");b.className="small";b.textContent=t("choose");
+    b.onclick=function(){choosePitch(i);};
+    card.appendChild(h);card.appendChild(body);card.appendChild(b);d.appendChild(card);
+  });
+}
+function choosePitch(i){
+  var p=cur();p.pitch=(p.pitchOptions||[])[i]||"";p.pitchOptions=[];save();
+  renderAll();autoGenerate();
+}
+function autoGenerate(){
+  var st=$("autoStatus");st.style.display="inline-block";busy(true);
+  var steps=[{label:t("auto1"),run:genPerso},{label:t("auto2"),run:genMonde},{label:t("auto3"),run:genPlan}];
+  var idx=0;
+  function next(){
+    if(idx>=steps.length){st.textContent=t("autoDone");busy(false);
+      var tab=document.querySelector('.tab[data-t="redac"]');if(tab)tab.click();
+      setTimeout(function(){st.style.display="none";},10000);return;}
+    st.textContent=steps[idx].label;
+    steps[idx].run(function(ok){if(!ok){st.style.display="none";return;}idx++;next();});
+  }
+  next();
+}
+
 // ============================= Événements =============================
 $("btn-fr").onclick=function(){L="fr";localStorage.setItem("aria-lang",L);renderAll();};
 $("btn-en").onclick=function(){L="en";localStorage.setItem("aria-lang",L);renderAll();};
@@ -462,27 +529,11 @@ $("importFile").onchange=function(){
   r.readAsText(f);this.value="";};
 
 // Générateurs
-$("b-pitch").onclick=function(){var p=cur(),pr=P();busy(true);
-  callMistral(pr.pro,P().pitch.replace("GENRE",label(GENRES,p.genre)).replace("TITRE",p.title||"?"),
-    function(txt){p.pitch=txt;$("pitch").value=txt;save();busy(false);});};
-$("b-plan").onclick=function(){var p=cur(),pr=P(),n=parseInt($("nch").value)||12;busy(true);
-  callMistral(pr.pro,context()+"\n\n"+P().plan.replace("N",""+n),
-    function(txt){p.plan=txt;$("plan").value=txt;
-      var chs=[],re=/Chapitre\s*(\d+)\s*[:：]\s*(.+)/g,m;
-      while((m=re.exec(txt))!==null){
-        var rest=m[2].trim(),parts=rest.split(/\s+[—–-]\s+/),title=parts[0].trim(),summary=parts.length>1?rest.slice(title.length).replace(/^\s*[—–-]\s*/,"").trim():"";
-        chs.push({title:title,summary:summary,notes:"",text:"",status:"planifie"});}
-      if(chs.length)p.chapters=chs;
-      save();renderChaps();updateStats();busy(false);});};
-$("b-perso").onclick=function(){var p=cur(),pr=P();busy(true);
-  callMistral(pr.pro,context()+"\n\n"+P().pers,
-    function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
-      (d.characters||[]).forEach(function(c){p.characters.push({name:c.name||"",role:c.role||"secondaire",description:c.description||""});});
-      save();renderPersos();}catch(e){showErr(t("errJson"));}busy(false);});};
+$("b-pitch").onclick=function(){busy(true);genPitches(function(){busy(false);});};
+$("b-plan").onclick=function(){busy(true);genPlan(function(){busy(false);});};
+$("b-perso").onclick=function(){busy(true);genPerso(function(){busy(false);});};
 $("b-perso-add").onclick=function(){cur().characters.push({name:"",role:"secondaire",description:""});save();renderPersos();};
-$("b-monde").onclick=function(){var p=cur(),pr=P();busy(true);
-  callMistral(pr.pro,context()+"\n\n"+P().world,
-    function(txt){p.world=txt;$("world").value=txt;save();busy(false);});};
+$("b-monde").onclick=function(){busy(true);genMonde(function(){busy(false);});};
 
 // ============================= Exports =============================
 function chaptersWithText(){return cur().chapters.filter(function(c){return c.text;});}
