@@ -233,7 +233,7 @@ var T={
  chStd:"Standard (~1500-2000 mots)",chLong:"Long (~2500-3500 mots)",chXLong:"Très long (4000 mots et plus)",
  exports:"Exporter :",noChap:"Générez d'abord un plan (onglet ②) pour créer les chapitres.",
  bAutoNovel:"📘 Écrire tout le roman",bStop:"⏹ Arrêter",allDone:"Tous les chapitres sont déjà rédigés !",
- autoProg:"Chapitre {n}/{t} : {c}",autoStopped:"⏹ Interrompu ({n}/{t}) — cliquez pour reprendre",autoErr:"⚠ Interruption au chapitre {n} (erreur API) — recliquez pour reprendre",autoRetry:"⚠ Souci de connexion, nouvel essai ({a})…",
+ autoProg:"Chapitre {n}/{t} : {c}",autoStopped:"⏹ Interrompu ({n}/{t}) — cliquez pour reprendre",autoErr:"⚠ Interruption au chapitre {n} (erreur API) — recliquez pour reprendre",autoRetry:"⚠ Souci de connexion, nouvel essai ({a})…",wakeFail:"⚠ Votre navigateur ne peut pas bloquer la mise en veille : gardez l'écran allumé pendant l'écriture.",
  words:"mots",written:"écrits",
  bWrite:"✨ Écrire le chapitre",bRegen:"↻ Réécrire entièrement",bCont:"✍️ Continuer mon texte (+1000)",bRewrite:"↻ Réécrire",
  selRewrite:"Option de réécriture…",rwDarker:"Plus sombre",rwDialog:"Plus dialogué",rwShort:"Plus court",rwDescr:"Plus descriptif",rwTense:"Plus de tension",
@@ -262,7 +262,7 @@ var T={
  chStd:"Standard (~1500-2000 words)",chLong:"Long (~2500-3500 words)",chXLong:"Extra long (4000+ words)",
  exports:"Export:",noChap:"Generate an outline first (tab ②) to create chapters.",
  bAutoNovel:"📘 Write the whole novel",bStop:"⏹ Stop",allDone:"All chapters are already written!",
- autoProg:"Chapter {n}/{t}: {c}",autoStopped:"⏹ Stopped ({n}/{t}) — click to resume",autoErr:"⚠ Interrupted at chapter {n} (API error) — click to resume",autoRetry:"⚠ Connection issue, retrying ({a})…",
+ autoProg:"Chapter {n}/{t}: {c}",autoStopped:"⏹ Stopped ({n}/{t}) — click to resume",autoErr:"⚠ Interrupted at chapter {n} (API error) — click to resume",autoRetry:"⚠ Connection issue, retrying ({a})…",wakeFail:"⚠ Your browser cannot prevent sleep: keep the screen on while writing.",
  words:"words",written:"written",
  bWrite:"✨ Write the chapter",bRegen:"↻ Rewrite entirely",bCont:"✍️ Continue my text (+1000)",bRewrite:"↻ Rewrite",
  selRewrite:"Rewrite option…",rwDarker:"Darker",rwDialog:"More dialogue",rwShort:"Shorter",rwDescr:"More descriptive",rwTense:"More tension",
@@ -508,13 +508,29 @@ function genChap(i,mode,cb){
 
 // ---- Écriture automatique de tout le roman ----
 var autoWriting=false,stopAuto=false,autoCur=0,autoTotal=0;
+// Empêcher la mise en veille de l'écran pendant l'écriture automatique
+var wakeLock=null,wakeOk=true,wakeFailShown=false;
+function wakeFail(){if(!wakeFailShown){wakeFailShown=true;showErr(t("wakeFail"));}}
+function acquireWakeLock(){
+  if(typeof navigator==="undefined"||!(navigator.wakeLock&&navigator.wakeLock.request)){wakeOk=false;wakeFail();return;}
+  try{
+    navigator.wakeLock.request("screen").then(function(wl){
+      wakeLock=wl;
+      wl.addEventListener("release",function(){wakeLock=null;});
+    }).catch(function(){wakeOk=false;wakeFail();});
+  }catch(e){wakeOk=false;wakeFail();}
+}
+function releaseWakeLock(){try{if(wakeLock){wakeLock.release();wakeLock=null;}}catch(e){}}
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible"&&autoWriting){wakeOk=true;acquireWakeLock();}
+});
 function updateAutoUI(){
   var b=$("b-autonovel"),s=$("b-stop"),n=$("auto-note");
   if(!b)return;
   b.disabled=autoWriting;
   s.style.display=autoWriting?"":"none";
   s.disabled=false;
-  if(!autoWriting){n.style.display="none";}
+  if(!autoWriting){n.style.display="none";releaseWakeLock();}
 }
 function setAutoNote(txt){var n=$("auto-note");n.textContent=txt;n.style.display="";}
 function writeAllNovel(){
@@ -526,6 +542,7 @@ function writeAllNovel(){
   for(var i=start;i<p.chapters.length;i++)if(!p.chapters[i].text)todo.push(i);
   if(!todo.length){showErr(t("allDone"));return;}
   autoWriting=true;stopAuto=false;autoTotal=todo.length;updateAutoUI();busy(true);
+  wakeOk=true;wakeFailShown=false;acquireWakeLock();
   var done=0;
   (function next(){
     if(cur()!==p)stopAuto=true;
