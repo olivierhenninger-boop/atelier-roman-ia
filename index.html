@@ -304,7 +304,8 @@ var T={
  printNovel:"🖨 Imprimer / PDF",
  closeNovel:"✕ Fermer",
  doneRead:"✅ Roman ouvert dans un nouvel onglet.",
- doneDl:"✅ Roman téléchargé sur votre ordinateur.",
+ doneDl:"✅ Roman téléchargé sur votre ordinateur (par défaut : dossier Téléchargements).",
+ dlHint:"📁 Pour choisir l'emplacement d'enregistrement : réglages de votre navigateur → « Demander où enregistrer chaque fichier avant de télécharger ». Sinon le fichier va dans « Téléchargements ».",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
@@ -373,7 +374,8 @@ var T={
  printNovel:"🖨 Print / PDF",
  closeNovel:"✕ Close",
  doneRead:"✅ Novel opened in a new tab.",
- doneDl:"✅ Novel downloaded to your computer.",
+ doneDl:"✅ Novel downloaded to your computer (default: Downloads folder).",
+ dlHint:"📁 To choose where to save the file: your browser settings → “Ask where to save each file before downloading”. Otherwise the file goes to “Downloads”.",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
@@ -1189,10 +1191,10 @@ $("b-export-docx").onclick=function(){
 function novelHtml(p,toolbar){
   var chs=chaptersWithText();
   var css='body{font-family:Georgia,"Times New Roman",serif;max-width:16.5cm;margin:2cm auto;color:#111;line-height:1.7}h1{text-align:center;font-size:1.9em;margin:.5em 0 1.5em}h2{page-break-before:always;margin-top:1.4em}p{margin:0 0 .35em;text-indent:1.5em}p.first{text-indent:0}@media print{body{margin:0;margin-top:0}#nvbar{display:none}}';
-  if(toolbar)css+='#nvbar{position:fixed;top:0;left:0;right:0;background:#222;color:#fff;padding:8px 12px;display:flex;gap:10px;z-index:9}#nvbar button{cursor:pointer}body{margin-top:56px}';
+  if(toolbar)css+='#nvbar{position:fixed;top:0;left:0;right:0;background:#222;color:#fff;padding:8px 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;z-index:9}#nvbar button{cursor:pointer}#nvbar .nvhint{flex:1;min-width:200px;text-align:right;font-size:.78rem;opacity:.85}body{margin-top:56px}';
   var html='<!doctype html><html><head><meta charset="UTF-8"><title>'+esc(p.title)+'</title><style>'+css+'</style></head><body>';
   if(toolbar){
-    html+='<div id="nvbar"><button onclick="dlNov()">💾 '+t("dlNovel")+'</button><button onclick="window.print()">🖨 '+t("printNovel")+'</button><button onclick="window.close()">✕ '+t("closeNovel")+'</button></div>'+'<script>function dlNov(){var b=new Blob(["<!doctype html>\\n"+document.documentElement.outerHTML],{type:"text/html"});var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download="'+slug(p.title)+'.html";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u)},2000);}<\/script>';
+    html+='<div id="nvbar"><button onclick="dlNov()">💾 '+t("dlNovel")+'</button><button onclick="window.print()">🖨 '+t("printNovel")+'</button><button onclick="window.close()">✕ '+t("closeNovel")+'</button><span class="nvhint">'+t("dlHint")+'</span></div>'+'<script>function dlNov(){var b=new Blob(["<!doctype html>\\n"+document.documentElement.outerHTML],{type:"text/html"});var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download="'+slug(p.title)+'.html";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u)},2000);}<\/script>';
   }
   html+='<h1>'+esc(p.title)+'</h1>';
   chs.forEach(function(c){
