@@ -168,8 +168,13 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
       <div style="flex:0 0 90px"><input type="number" id="nch" value="12" min="3" max="100"></div>
       <div style="flex:0 0 auto"><button id="b-plan"></button></div>
     </div>
+    <div class="row" style="align-items:center;margin-top:10px">
+      <div style="flex:0 0 auto"><button class="ghost" id="b-extend"></button></div>
+      <div style="flex:0 0 auto"><select id="ext-sel"></select></div>
+    </div>
     <textarea id="plan" rows="16" style="margin-top:10px" class="serif"></textarea>
     <p class="hint" id="t-planHint"></p>
+    <p class="hint" id="t-extHint" style="display:none"></p>
   </div>
 
   <div class="panel" id="p-perso">
@@ -224,6 +229,12 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
       <button class="small" id="b-batch-rw"></button>
       <span class="hint" id="rw-hint" style="flex:0 0 100%;margin:0"></span>
     </div>
+    <div class="statsrow" style="margin-bottom:16px">
+      <strong id="t-edLabel"></strong>
+      <select id="edmode" style="max-width:320px"></select>
+      <button class="small" id="b-edrev"></button>
+      <span class="hint" id="ed-hint" style="flex:0 0 100%;margin:0"></span>
+    </div>
     <div id="chaps"></div>
   </div>
 </div>
@@ -241,6 +252,12 @@ var T={
  choose:"✓ Utiliser ce pitch",auto1:"Étape 1/3 : personnages…",auto2:"Étape 2/3 : univers…",auto3:"Étape 3/3 : plan…",autoDone:"✅ Personnages, univers et plan générés ! Rédigez vos chapitres dans l'onglet ⑤.",
  lNCh:"Chapitres :",bPlan:"✨ Générer le plan",
  nchSizes:"Tailles proposées…",errPrint:"Autorisez les fenêtres surgissantes dans votre navigateur pour imprimer ou créer un PDF.",
+ bExtend:"➕ Prolonger le roman (l'IA propose)",extAuto:"Nombre : l'IA décide",ext3:"+3 chapitres",ext6:"+6 chapitres",ext12:"+12 chapitres",
+ extHint:"L'IA lit votre plan et propose de nouveaux chapitres pour prolonger l'histoire de façon pertinente (c'est elle qui choisit combien, sauf si vous imposez un nombre). Ils s'ajoutent à la suite du plan existant.",
+ errPlanFirst:"Générez d'abord un plan pour ce roman (onglet ②).",
+ edLabel:"Révision éditoriale :",edHint:"Relit et corrige TOUS les chapitres écrits, l'un après l'autre, avec l'option choisie. Interruption possible : recliquez pour reprendre.",
+ bEdRev:"🔍 Réviser tout le texte écrit",edFull:"🧹 Correction complète (style, fluidité, répétitions)",edEnrich:"🎨 Enrichissement littéraire",edCoh:"🧩 Cohérence personnages & intrigue",edRythm:"⚡ Rythme & tension",
+ edProg:"Révision {n}/{t} : {c}",edStopped:"⏹ Révision interrompue ({n}/{t}) — recliquez pour reprendre",edDone:"✅ Révision terminée : {n} chapitre(s) révisé(s)",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
@@ -274,6 +291,12 @@ var T={
  choose:"✓ Use this pitch",auto1:"Step 1/3: characters…",auto2:"Step 2/3: world…",auto3:"Step 3/3: outline…",autoDone:"✅ Characters, world and outline generated! Write your chapters in tab ⑤.",
  lNCh:"Chapters:",bPlan:"✨ Generate the outline",
  nchSizes:"Suggested sizes…",errPrint:"Allow pop-up windows in your browser to print or create a PDF.",
+ bExtend:"➕ Extend the novel (AI proposes)",extAuto:"How many: the AI decides",ext3:"+3 chapters",ext6:"+6 chapters",ext12:"+12 chapters",
+ extHint:"The AI reads your outline and proposes new chapters to extend the story in a relevant way (it decides how many, unless you force a number). They are appended to the existing outline.",
+ errPlanFirst:"Generate an outline for this novel first (tab ②).",
+ edLabel:"Editorial review:",edHint:"Rereads and revises ALL written chapters, one after another, with the chosen option. You can stop: click again to resume.",
+ bEdRev:"🔍 Review all written text",edFull:"🧹 Full copy-edit (style, flow, repetitions)",edEnrich:"🎨 Literary enrichment",edCoh:"🧩 Character & plot consistency",edRythm:"⚡ Pacing & tension",
+ edProg:"Reviewing {n}/{t}: {c}",edStopped:"⏹ Review stopped ({n}/{t}) — click again to resume",edDone:"✅ Review complete: {n} chapter(s) revised",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
@@ -385,6 +408,10 @@ function P(){
       short:fr?"Condense ce chapitre d'un tiers : rythme vif, supprime le superflu, garde les événements clés.":"Cut this chapter by a third: brisk pace, trim the fat, keep the key events.",
       descr:fr?"Enrichis ce chapitre de descriptions sensorielles et d'atmosphère, en gardant les événements.":"Enrich this chapter with sensory descriptions and atmosphere, keeping the events.",
       tense:fr?"Réécris ce chapitre en montant fortement la tension dramatique, en gardant les événements.":"Rewrite this chapter, dramatically raising the tension, keeping the events."},
+  ed:{full:fr?"Relis et révise intégralement ce chapitre comme un éditeur professionnel : corrige les maladresses et les fautes, supprime les répétitions et les formules creuses, améliore la fluidité et le style, en conservant exactement les mêmes événements et environ la même longueur.":"Read and fully copy-edit this chapter like a professional editor: fix awkward phrasing and mistakes, remove repetitions and empty phrases, improve flow and style, keeping the same events and about the same length.",
+      enrich:fr?"Révise ce chapitre en l'enrichissant littérairement : prose plus soignée, images et sensations plus fortes, sous-texte plus présent, sans changer les événements ni la longueur approximative.":"Revise this chapter with literary enrichment: more polished prose, stronger imagery and sensations, more subtext, without changing the events or the approximate length.",
+      coh:fr?"Révise ce chapitre pour garantir la cohérence avec les personnages, l'univers et l'intrigue de ce roman : corrige toute incohérence (noms, faits, chronologie, caractères), en conservant les événements et la longueur.":"Revise this chapter to ensure consistency with the characters, world and plot of this novel: fix any inconsistency (names, facts, chronology, personalities), keeping the events and the length.",
+      rythm:fr?"Révise ce chapitre en renforçant le rythme et la tension : phrases plus percutantes, scènes resserrées, temps morts supprimés, sans perdre d'événements ni raccourcir le texte.":"Revise this chapter to strengthen pacing and tension: punchier sentences, tighter scenes, dead time removed, without losing events or shortening the text."},
   ctx:fr?{t:"Titre",g:"Genre",s:"Style",p:"Pitch",c:"Personnages",w:"Univers",done:"Rappel des derniers chapitres écrits :",none:"(aucun)",curc:"Chapitre actuel :",notw:"(pas encore écrit)",noC:"(aucun)"}
        :{t:"Title",g:"Genre",s:"Style",p:"Pitch",c:"Characters",w:"World",done:"Reminder of the last chapters written:",none:"(none)",curc:"Current chapter:",notw:"(not written yet)",noC:"(none)"}
  };}
@@ -421,6 +448,11 @@ function applyI18n(){
  $("rw-sel-all").textContent=t("rwSelAll");
  $("rw-sel-none").textContent=t("rwSelNone");
  $("b-batch-rw").textContent=t("bBatchRw");
+ $("t-extHint").textContent=t("extHint");$("t-extHint").style.display="block";
+ $("b-extend").textContent=t("bExtend");
+ $("t-edLabel").textContent=t("edLabel");
+ $("ed-hint").textContent=t("edHint");
+ $("b-edrev").textContent=t("bEdRev");
  $("btn-fr").classList.toggle("active",L==="fr");
   $("btn-en").classList.toggle("active",L==="en");
 }
@@ -444,6 +476,9 @@ function renderWorkspace(){
   var o0=document.createElement("option");o0.value="";o0.textContent=t("nchSizes");ns.appendChild(o0);
   SIZES.forEach(function(s){var o=document.createElement("option");o.value=s.v;o.textContent=s[L]||s.fr;ns.appendChild(o);});
   ns.onchange=function(){if(this.value)$("nch").value=this.value;};
+  var es=$("ext-sel");es.innerHTML="";
+  [["auto","extAuto"],["3","ext3"],["6","ext6"],["12","ext12"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=t(a[1]);es.appendChild(o);});
+  renderEdMode();
   var cl=$("chlen");cl.innerHTML="";
   [["std","chStd"],["long","chLong"],["xlong","chXLong"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=t(a[1]);if((p.chlen||"std")===a[0])o.selected=true;cl.appendChild(o);});
   cl.onchange=function(){p.chlen=this.value;save();};
@@ -558,6 +593,11 @@ function renderBatchRw(){
   if(rwProj!==p.id){rwProj=p.id;rwSel={};rwQueue=null;}
   renderRwMode();renderRwDrop();rwBtnLabel();
 }
+function renderEdMode(){
+  var sel=$("edmode");sel.innerHTML="";
+  [["full","edFull"],["enrich","edEnrich"],["coh","edCoh"],["rythm","edRythm"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=t(a[1]);sel.appendChild(o);});
+  sel.onchange=function(){rwQueue=null;};
+}
 $("rw-drop-btn").onclick=function(e){if(e&&e.stopPropagation)e.stopPropagation();var d=$("rw-drop");d.style.display=(d.style.display==="none")?"":"none";};
 $("rw-sel-all").onclick=function(){var p=cur();if(!p)return;p.chapters.forEach(function(c,i){rwSel[i]=true;});renderRwDrop();rwBtnLabel();};
 $("rw-sel-none").onclick=function(){rwSel={};rwQueue=null;renderRwDrop();rwBtnLabel();};
@@ -568,12 +608,14 @@ function chlenTarget(){var w=(cur().chlen||"std");return w==="xlong"?4000:(w==="
 function genChap(i,mode,cb){
   var p=cur(),c=p.chapters[i],pr=P();
   var opt=mode.indexOf("rw:")===0?mode.slice(3):null;
+  var ed=mode.indexOf("ed:")===0?mode.slice(3):null;
   // contexte élargi : les 3 derniers chapitres rédigés, en version longue
   var written=p.chapters.filter(function(x,j){return j!==i&&x.text;});
   var last3=written.slice(-3).map(function(x){return "« "+x.title+" » : "+x.text.slice(0,1500)+"…";}).join("\n\n");
   var ask;
   if(mode==="full")ask=pr.full(c)+" "+pr.notes(c.notes);
   else if(mode==="suite")ask=pr.suite+" "+pr.notes(c.notes);
+  else if(ed)ask=pr.ed[ed]+" "+pr.notes(c.notes);
   else ask=pr.rw[opt]+" "+pr.notes(c.notes);
   // poursuite automatique si le chapitre est plus court que la longueur demandée
   var cont=0,MAXCONT=3,auto=(mode==="full"&&!opt);
@@ -591,7 +633,7 @@ function genChap(i,mode,cb){
     callMistral(pr.author,
       context()+"\n\n"+pr.ctx.done+"\n"+(last3||pr.ctx.none)+"\n\n"+pr.ctx.curc+"\n"+(isCont?c.text.slice(-4000):(c.text||pr.ctx.notw))+"\n\n"+askTxt,
       function(txt){
-        if(mode==="full"||opt){c.text=isCont?c.text+"\n\n"+txt:txt;}
+        if(mode==="full"||opt||ed){c.text=isCont?c.text+"\n\n"+txt:txt;}
         else c.text=c.text+"\n\n"+txt;
         if(auto&&cont<MAXCONT&&wordCount(c)<Math.round(chlenTarget()*0.8)){
           cont++;run(contAsk(),true);return;}
@@ -620,10 +662,11 @@ document.addEventListener("visibilitychange",function(){
   if(document.visibilityState==="visible"&&autoWriting){wakeOk=true;acquireWakeLock();}
 });
 function updateAutoUI(){
-  var b=$("b-autonovel"),s=$("b-stop"),n=$("auto-note"),rb=$("b-batch-rw");
+  var b=$("b-autonovel"),s=$("b-stop"),n=$("auto-note"),rb=$("b-batch-rw"),ed=$("b-edrev");
   if(!b)return;
   b.disabled=autoWriting;
   if(rb)rb.disabled=autoWriting;
+  if(ed)ed.disabled=autoWriting;
   s.style.display=autoWriting?"":"none";
   s.disabled=false;
   if(!autoWriting){n.style.display="none";releaseWakeLock();}
@@ -667,6 +710,11 @@ function batchRewrite(){
   var todo;
   if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){todo=rwQueue.list;}
   else{todo=sel.map(function(i){var c=p.chapters[i];return {i:i,mode:(modeSel==="full"||!c.text)?"full":("rw:"+modeSel)};});}
+  runBatch(p,todo,sig,{prog:"rwProg",stopped:"rwStopped",done:"rwDone"});
+}
+
+// ---- Traitement en chaîne générique (réécriture multiple et révision éditoriale) ----
+function runBatch(p,todo,sig,k){
   autoWriting=true;stopAuto=false;autoTotal=todo.length;updateAutoUI();busy(true);
   wakeOk=true;wakeFailShown=false;acquireWakeLock();
   var done=0;
@@ -676,18 +724,33 @@ function batchRewrite(){
     if(finished||stopAuto){
       rwQueue=finished?null:{sig:sig,list:todo.slice(done)};
       busy(false);autoWriting=false;updateAutoUI();updateStats();
-      if(finished){setAutoNote(t("rwDone").replace("{n}",done));
+      if(finished){setAutoNote(t(k.done).replace("{n}",done));
         setTimeout(function(){if(!autoWriting){var nn=$("auto-note");if(nn)nn.style.display="none";}},20000);}
-      else setAutoNote(t("rwStopped").replace("{n}",done).replace("{t}",todo.length));
+      else setAutoNote(t(k.stopped).replace("{n}",done).replace("{t}",todo.length));
       return;
     }
     var it=todo[done];
     if(!p.chapters[it.i]){done++;next();return;}
     autoCur=it.i;
     rwQueue={sig:sig,list:todo.slice(done)};
-    setAutoNote(t("rwProg").replace("{n}",done+1).replace("{t}",todo.length).replace("{c}",p.chapters[it.i].title));
+    setAutoNote(t(k.prog).replace("{n}",done+1).replace("{t}",todo.length).replace("{c}",p.chapters[it.i].title));
     setTimeout(function(){genChap(it.i,it.mode,function(){done++;next();});},1500);
   })();
+}
+
+// ---- Révision éditoriale totale du texte écrit ----
+function editorialReview(){
+  var p=cur();
+  if(!p)return;
+  if(autoWriting)return;
+  var withTxt=p.chapters.map(function(c,i){return c.text?i:-1;}).filter(function(i){return i>=0;});
+  if(!withTxt.length){showErr(t("noEpub"));return;}
+  var opt=$("edmode").value;
+  var sig="ed|"+opt;
+  var todo;
+  if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){todo=rwQueue.list;}
+  else{todo=withTxt.map(function(i){return {i:i,mode:"ed:"+opt};});}
+  runBatch(p,todo,sig,{prog:"edProg",stopped:"edStopped",done:"edDone"});
 }
 
 // ---- Générateurs réutilisables ----
@@ -708,6 +771,39 @@ function genPlan(cb){var p=cur(),n=Math.max(3,Math.min(100,parseInt($("nch").val
         chs.push({title:title,summary:summary,notes:"",text:"",status:"planifie"});}
       if(chs.length)p.chapters=chs;
       save();renderChaps();updateStats();cb&&cb(true);});}
+// ---- Prolongation du roman : l'IA propose de nouveaux chapitres ----
+function genExtend(){
+  var p=cur(),pr=P();
+  if(!p.plan||!p.chapters.length){showErr(t("errPlanFirst"));return;}
+  var n=p.chapters.length;
+  var sel=$("ext-sel").value;
+  var cnt=(sel==="auto")?0:parseInt(sel);
+  var fr=p.nlang!=="en";
+  var ask=(fr?"Voici le plan actuel de ce roman ("+n+" chapitres). Propose une prolongation pertinente de l'histoire : rédige des chapitres "+(n+1)+" et suivants qui prolongent ou relancent l'intrigue de manière cohérente et forte."
+             :"Here is the current outline of this novel ("+n+" chapters). Propose a relevant continuation of the story: write chapters "+(n+1)+" and beyond that extend or re-energize the plot coherently and strongly.")+" "+
+    (cnt?(fr?"Propose exactement "+cnt+" nouveaux chapitres.":"Propose exactly "+cnt+" new chapters.")
+        :(fr?"Choisis toi-même le nombre de chapitres le plus pertinent pour l'histoire, entre 3 et 12.":"Choose yourself the most relevant number of chapters for the story, between 3 and 12."))+" "+
+    (fr?"IMPERATIF : une seule ligne par chapitre, au format exact \"Chapitre N : Titre — Résumé de 3-4 phrases\", sans texte autour."
+       :"MANDATORY: one line per chapter, exact format \"Chapter N: Title — 3-4 sentence summary\", nothing around.");
+  var written=p.chapters.map(function(c,i){return c.text?(i+1):0;}).filter(function(x){return x;});
+  var promptText=context()+"\n\n"+(fr?"Plan actuel ("+n+" chapitres) :\n":"Current outline ("+n+" chapters):\n")+p.plan+"\n\n"+
+    (fr?"Chapitres déjà rédigés : "+(written.join(", ")||"aucun")+".":"Chapters already written: "+(written.join(", ")||"none")+".")+"\n\n"+ask;
+  busy(true);
+  callMistral(pr.pro,promptText,function(txt){
+    var re=/Chapitre\s*(\d+)\s*[:：]\s*(.+)/g,m,chs=[];
+    while((m=re.exec(txt))!==null){
+      var num=parseInt(m[1]);
+      var rest=m[2].trim(),parts=rest.split(/\s+[—–-]\s+/),title=parts[0].trim(),summary=parts.length>1?rest.slice(title.length).replace(/^\s*[—–-]\s*/,"").trim():"";
+      chs.push({num:num,title:title,summary:summary});
+    }
+    chs=chs.filter(function(c){return c.num>n;});
+    var toAdd=chs.slice(0,Math.max(0,100-n));
+    if(!toAdd.length){showErr(t("errJson"));busy(false);return;}
+    toAdd.forEach(function(c){p.chapters.push({title:c.title,summary:c.summary,notes:"",text:"",status:"planifie"});});
+    p.plan=p.plan+"\n"+toAdd.map(function(c){return "Chapitre "+c.num+" : "+c.title+" — "+c.summary;}).join("\n");
+    save();$("plan").value=p.plan;renderChaps();updateStats();$("nch").value=Math.min(100,p.chapters.length);busy(false);
+  });
+}
 function genPitches(cb){var p=cur(),pr=P();
   callMistral(pr.pro,P().pitches.replace("GENRE",label(GENRES,p.genre)).replace("TITRE",p.title||"?"),
     function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
@@ -799,6 +895,7 @@ $("importFile").onchange=function(){
 
 $("b-pitch").onclick=function(){busy(true);genPitches(function(){busy(false);});};
 $("b-plan").onclick=function(){busy(true);genPlan(function(){busy(false);});};
+$("b-extend").onclick=genExtend;
 $("b-perso").onclick=function(){busy(true);genPerso(function(){busy(false);});};
 $("b-perso-add").onclick=function(){cur().characters.push({name:"",role:"secondaire",description:""});save();renderPersos();};
 $("b-monde").onclick=function(){busy(true);genMonde(function(){busy(false);});};
@@ -808,6 +905,7 @@ function chaptersWithText(){return cur().chapters.filter(function(c){return c.te
 function download(name,mime,data){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;a.click();}
 $("b-autonovel").onclick=writeAllNovel;
 $("b-batch-rw").onclick=batchRewrite;
+$("b-edrev").onclick=editorialReview;
 $("b-stop").onclick=function(){stopAuto=true;this.disabled=true;};
 $("b-export").onclick=function(){download(slug(cur().title)+".txt","text/plain;charset=utf-8",
   cur().title.toUpperCase()+"\n\n"+cur().chapters.map(function(c){return "\n\n## "+c.title+"\n\n"+c.text;}).join(""));};
