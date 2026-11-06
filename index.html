@@ -131,6 +131,7 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
       <option value="open-mistral-nemo">open-mistral-nemo</option>
     </select>
     <span class="badge" id="keybadge"></span>
+    <span class="hint" id="gen-note" style="display:none;font-weight:600;color:var(--gold)"></span>
   </div>
   <div class="err" id="err"></div>
 
@@ -242,6 +243,9 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
     <div class="card" id="ed-report" style="display:none;margin-bottom:16px">
       <strong id="t-edRepTitle"></strong>
       <p class="serif" id="ed-report-body" style="white-space:pre-wrap;font-size:.88rem;margin-top:8px"></p>
+      <div style="margin-top:10px"><button class="small" id="b-edfix"></button></div>
+      <strong id="t-edFixTitle" style="display:none;margin-top:12px"></strong>
+      <p class="serif" id="ed-fix-list" style="display:none;white-space:pre-wrap;font-size:.85rem;margin-top:6px"></p>
     </div>
     <div class="card" id="syn-card" style="display:none;margin-bottom:16px">
       <strong id="t-synTitle"></strong>
@@ -277,6 +281,23 @@ var T={
  edRepTitle:"🧾 Rapport éditorial de l'IA (bilan global du roman)",
  bSyn:"📚 4e de couverture",
  synTitle:"📚 Quatrième de couverture (générée par l'IA)",
+ wGen:"⏳ L'IA travaille…",doneGen:"✅ Génération terminée.",
+ wChap:"⏳ Rédaction de « {c} » en cours…",doneChap:"✅ Chapitre rédigé.",
+ wSyn:"⏳ Rédaction de la 4e de couverture…",doneSyn:"✅ 4e de couverture prête.",
+ wExtend:"⏳ Prolongation du roman…",doneExtend:"✅ Nouveaux chapitres ajoutés au plan.",
+ wPlan:"⏳ Construction du plan…",donePlan:"✅ Plan généré.",
+ wPerso:"⏳ Création des personnages…",donePerso:"✅ Personnages créés.",
+ wMonde:"⏳ Description de l'univers…",doneMonde:"✅ Univers généré.",
+ wPitches:"⏳ Proposition de pitchs…",donePitches:"✅ Pitchs prêts.",
+ wBible:"⏳ Lecture du roman et bilan de cohérence global…",doneBible:"✅ Rapport éditorial prêt.",
+ wFix:"⏳ Élaboration des correctifs à partir du rapport…",
+ bEdFix:"🩹 Corriger les incohérences relevées",
+ edFixTitle:"🩹 Correctifs proposés par l'IA :",
+ fixProg:"🩹 Correctif {n}/{t} : {c}",
+ fixStopped:"⏹ Correctifs interrompus ({n}/{t}) — recliquez pour reprendre",
+ fixDone:"✅ Correctifs appliqués : {n} chapitre(s) modifié(s)",
+ fixNone:"✅ Aucun correctif nécessaire d'après le rapport.",
+ needReport:"Lancez d'abord « 🔍 Réviser tout le texte écrit » pour obtenir le rapport éditorial, puis revenez ici.",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
@@ -323,6 +344,23 @@ var T={
  edRepTitle:"🧾 AI editorial report (global brief of the novel)",
  bSyn:"📚 Back cover",
  synTitle:"📚 Back cover (AI-generated)",
+ wGen:"⏳ The AI is working…",doneGen:"✅ Generation complete.",
+ wChap:"⏳ Writing “{c}”…",doneChap:"✅ Chapter written.",
+ wSyn:"⏳ Writing the back cover…",doneSyn:"✅ Back cover ready.",
+ wExtend:"⏳ Extending the novel…",doneExtend:"✅ New chapters added to the outline.",
+ wPlan:"⏳ Building the outline…",donePlan:"✅ Outline generated.",
+ wPerso:"⏳ Creating characters…",donePerso:"✅ Characters created.",
+ wMonde:"⏳ Describing the world…",doneMonde:"✅ World generated.",
+ wPitches:"⏳ Suggesting pitches…",donePitches:"✅ Pitches ready.",
+ wBible:"⏳ Reading the novel and building the global brief…",doneBible:"✅ Editorial report ready.",
+ wFix:"⏳ Building fixes from the report…",
+ bEdFix:"🩹 Fix the inconsistencies found",
+ edFixTitle:"🩹 Fixes proposed by the AI:",
+ fixProg:"🩹 Fix {n}/{t}: {c}",
+ fixStopped:"⏹ Fixes stopped ({n}/{t}) — click again to resume",
+ fixDone:"✅ Fixes applied: {n} chapter(s) modified",
+ fixNone:"✅ No fix needed according to the report.",
+ needReport:"First run “🔍 Review all written text” to get the editorial report, then come back here.",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
@@ -369,7 +407,7 @@ function cur(){for(var i=0;i<DB.projects.length;i++){if(DB.projects[i].id===DB.c
 function newProject(title,genre){var p={id:"p"+Date.now(),title:title||"",genre:genre||"fantasy",style:"classic",nlang:L==="en"?"en":"fr",pitch:"",plan:"",world:"",characters:[],chapters:[],goal:50000,chlen:"std"};DB.projects.push(p);DB.current=p.id;save();return p;}
 
 function $(id){return document.getElementById(id);}
-function showErr(m){var e=$("err");e.textContent=m;e.style.display="block";setTimeout(function(){e.style.display="none";},9000);}
+function showErr(m){var e=$("err");e.textContent=m;e.style.display="block";genNoteHide();setTimeout(function(){e.style.display="none";},9000);}
 function slug(s){return (s||"roman").toLowerCase().replace(/[^\w\-]+/g,"-").replace(/^-+|-+$/g,"")||"roman";}
 
 // ============================= API Mistral =============================
@@ -395,6 +433,7 @@ function callMistral(sys,prompt,cb){
       var retryable=/^RETRY/.test(msg)||/network|failed to fetch|timeout/i.test(msg);
       if(retryable&&attempt<MAXTRY&&!(typeof stopAuto!=="undefined"&&stopAuto)){attempt++;
         if(typeof autoWriting!=="undefined"&&autoWriting&&typeof setAutoNote==="function")setAutoNote(t("autoRetry").replace("{a}",attempt));
+        else if(typeof genNote==="function")genNote(t("autoRetry").replace("{a}",attempt));
         setTimeout(go,attempt*5000);
         return;}
       showErr(msg.replace(/^RETRY\((\d+)\)$/,"API ($1)"));
@@ -485,6 +524,8 @@ function applyI18n(){
  $("b-synopsis").textContent=t("bSyn");
  $("t-edRepTitle").textContent=t("edRepTitle");
  $("t-synTitle").textContent=t("synTitle");
+ $("b-edfix").textContent=t("bEdFix");
+ $("t-edFixTitle").textContent=t("edFixTitle");
  $("btn-fr").classList.toggle("active",L==="fr");
   $("btn-en").classList.toggle("active",L==="en");
 }
@@ -642,10 +683,11 @@ document.addEventListener("click",function(e){var d=$("rw-drop");if(!d||d.style.
 
 // ============================= Génération =============================
 function chlenTarget(){var w=(cur().chlen||"std");return w==="xlong"?4000:(w==="long"?2800:1700);}
-function genChap(i,mode,cb){
+function genChap(i,mode,cb,fixTxt){
   var p=cur(),c=p.chapters[i],pr=P();
   var opt=mode.indexOf("rw:")===0?mode.slice(3):null;
   var ed=mode.indexOf("ed:")===0?mode.slice(3):null;
+  var fx=mode==="fx:";
   // filet de sécurité : garder l'ancienne version avant de remplacer le texte
   if(mode!=="suite"&&c.text){c.versions=c.versions||[];c.versions.push(c.text);if(c.versions.length>5)c.versions.shift();save();}
   // contexte élargi : les 3 derniers chapitres rédigés, en version longue
@@ -655,13 +697,16 @@ function genChap(i,mode,cb){
   if(mode==="full")ask=pr.full(c)+" "+pr.notes(c.notes);
   else if(mode==="suite")ask=pr.suite+" "+pr.notes(c.notes);
   else if(ed)ask=(p.edbible?((p.nlang!=="en"?"Voici le bilan de cohérence global du roman, établi à partir de l'ensemble des chapitres ; respecte-le pendant la révision :\n":"Here is the global coherence brief of the novel, built from all chapters; follow it while revising:\n")+p.edbible+"\n\n"):"")+pr.ed[ed]+" "+pr.notes(c.notes);
+  else if(fx)ask=(p.nlang!=="en"?"Voici les correctifs demandés après la révision éditoriale, pour ce chapitre uniquement. Applique-les en réécrivant le chapitre complet, en ne modifiant que les passages concernés et en conservant le reste du texte tel quel :\n":"Here are the fixes requested after the editorial review, for this chapter only. Apply them by rewriting the full chapter, changing only the concerned passages and keeping the rest of the text unchanged:\n")+(fixTxt||"")+" "+pr.notes(c.notes);
   else ask=pr.rw[opt]+" "+pr.notes(c.notes);
   ask=gnotesTxt()+ask;
   // poursuite automatique si le chapitre est plus court que la longueur demandée
   var cont=0,MAXCONT=3,auto=(mode==="full"&&!opt);
   busy(true);
+  if(!autoWriting)genNote(t("wChap").replace("{c}",c.title));
   function finish(){
     c.status="redige";save();renderChaps();updateStats();
+    if(!autoWriting)genNoteDone(t("doneChap"));
     if(cb)cb();else busy(false);
   }
   function contAsk(){
@@ -673,7 +718,7 @@ function genChap(i,mode,cb){
     callMistral(pr.author,
       context()+"\n\n"+pr.ctx.done+"\n"+(last3||pr.ctx.none)+"\n\n"+pr.ctx.curc+"\n"+(isCont?c.text.slice(-4000):(c.text||pr.ctx.notw))+"\n\n"+askTxt,
       function(txt){
-        if(mode==="full"||opt||ed){c.text=isCont?c.text+"\n\n"+txt:txt;}
+        if(mode==="full"||opt||ed||fx){c.text=isCont?c.text+"\n\n"+txt:txt;}
         else c.text=c.text+"\n\n"+txt;
         if(auto&&cont<MAXCONT&&wordCount(c)<Math.round(chlenTarget()*0.8)){
           cont++;run(contAsk(),true);return;}
@@ -707,11 +752,15 @@ function updateAutoUI(){
   b.disabled=autoWriting;
   if(rb)rb.disabled=autoWriting;
   if(ed)ed.disabled=autoWriting;
+  var fx=$("b-edfix");if(fx)fx.disabled=autoWriting;
   s.style.display=autoWriting?"":"none";
   s.disabled=false;
   if(!autoWriting){n.style.display="none";releaseWakeLock();}
 }
 function setAutoNote(txt){var n=$("auto-note");n.textContent=txt;n.style.display="";}
+function genNote(txt){var n=$("gen-note");if(!n)return;n.textContent=txt;n.style.display="";}
+function genNoteDone(txt){if(txt)genNote(txt);setTimeout(function(){var n=$("gen-note");if(n)n.style.display="none";},20000);}
+function genNoteHide(){var n=$("gen-note");if(n)n.style.display="none";}
 function writeAllNovel(){
   var p=cur();
   if(!p.chapters.length){showErr(t("noChap"));return;}
@@ -755,7 +804,7 @@ function batchRewrite(){
 
 // ---- Traitement en chaîne générique (réécriture multiple et révision éditoriale) ----
 function runBatch(p,todo,sig,k){
-  autoWriting=true;stopAuto=false;autoTotal=todo.length;updateAutoUI();busy(true);
+  autoWriting=true;stopAuto=false;autoTotal=todo.length;updateAutoUI();busy(true);genNoteHide();
   wakeOk=true;wakeFailShown=false;acquireWakeLock();
   var done=0;
   (function next(){
@@ -774,7 +823,7 @@ function runBatch(p,todo,sig,k){
     autoCur=it.i;
     rwQueue={sig:sig,list:todo.slice(done)};
     setAutoNote(t(k.prog).replace("{n}",done+1).replace("{t}",todo.length).replace("{c}",p.chapters[it.i].title));
-    setTimeout(function(){genChap(it.i,it.mode,function(){done++;next();});},1500);
+    setTimeout(function(){genChap(it.i,it.mode,function(){done++;next();},it.fix);},1500);
   })();
 }
 
@@ -795,8 +844,38 @@ function genEdBible(p,idxs,cb){
   var ask=fr?"Voici le roman complet, chapitre par chapitre. Établis un bilan éditorial GLOBAL destiné à guider une révision chapitre par chapitre en assurant la cohérence de l'ensemble : 1) Personnages : noms, traits, motivations, évolution (arcs). 2) Faits établis et chronologie. 3) Fils narratifs ouverts ou promis au lecteur. 4) Incohérences, contradictions ou oublis entre chapitres, en indiquant les numéros de chapitres concernés. 5) Ton et style à conserver. Réponds en listes claires, sans texte autour, 500 mots maximum."
 :"Here is the full novel, chapter by chapter. Write a GLOBAL editorial brief to guide a chapter-by-chapter revision ensuring overall consistency: 1) Characters: names, traits, motivations, arcs. 2) Established facts and chronology. 3) Open narrative threads or promises made to the reader. 4) Inconsistencies, contradictions or oversights between chapters, with chapter numbers. 5) Tone and style to preserve. Answer in clear lists, nothing around, 500 words max.";
   return callMistral(pr.pro,context()+gnotesTxt()+"\n\n"+novelText(p,idxs)+"\n\n"+ask,function(txt){
-    p.edbible=txt;save();renderEdReport();cb(true);
+    p.edbible=txt;save();renderEdReport();genNoteDone(t("doneBible"));cb(true);
   });
+}
+// ---- Correctifs post-révision : l'IA propose puis applique les corrections issues du rapport ----
+function genEdFix(){
+  var p=cur();
+  if(!p)return;
+  if(autoWriting)return;
+  if(!p.edbible){showErr(t("needReport"));return;}
+  var withTxt=p.chapters.map(function(c,i){return c.text?i:-1;}).filter(function(i){return i>=0;});
+  if(!withTxt.length){showErr(t("noEpub"));return;}
+  var sig="fix";
+  var k={prog:"fixProg",stopped:"fixStopped",done:"fixDone"};
+  if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){runBatch(p,rwQueue.list,sig,k);return;}
+  var fr=p.nlang!=="en";
+  var ask=fr?"Voici d'abord le rapport éditorial de ce roman, puis le roman complet. À partir des problèmes, incohérences et oublis relevés dans le rapport, établis la liste des correctifs concrets à appliquer au texte pour rendre le roman parfaitement cohérent. Réponds UNIQUEMENT au format JSON : {\"fixes\":[{\"chapter\":2,\"fix\":\"correctif précis à appliquer\"}]} où chapter est le numéro du chapitre concerné et fix la modification à faire (maximum 3 correctifs par chapitre, uniquement les corrections réellement nécessaires, liste vide si le roman est déjà cohérent)."
+:"Here is first the editorial report of this novel, then the full novel. From the problems, inconsistencies and oversights listed in the report, build the list of concrete fixes to apply to the text to make the novel perfectly consistent. Answer ONLY in JSON format: {\"fixes\":[{\"chapter\":2,\"fix\":\"precise fix to apply\"}]} where chapter is the concerned chapter number and fix the change to make (max 3 fixes per chapter, only truly necessary corrections, empty list if the novel is already consistent).";
+  busy(true);genNote(t("wFix"));
+  var started=callMistral(P().pro,context()+gnotesTxt()+"\n\n"+(fr?"RAPPORT ÉDITORIAL :\n":"EDITORIAL REPORT:\n")+p.edbible+"\n\n"+novelText(p,withTxt)+"\n\n"+ask,function(txt){
+    var fixes=[];
+    try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
+      fixes=(d.fixes||[]).filter(function(f){return f&&f.fix&&withTxt.indexOf(parseInt(f.chapter)-1)!==-1;});}
+    catch(e){showErr(t("errJson"));busy(false);return;}
+    p.edfix=fixes.slice(0,30);save();renderEdReport();
+    if(!p.edfix.length){genNoteDone(t("fixNone"));busy(false);return;}
+    var byCh={};
+    p.edfix.forEach(function(f){var i2=parseInt(f.chapter)-1;byCh[i2]=(byCh[i2]?byCh[i2]+"\n":"")+("- "+f.fix);});
+    var todo=[];
+    withTxt.forEach(function(i2){if(byCh[i2])todo.push({i:i2,mode:"fx:",fix:byCh[i2]});});
+    runBatch(p,todo,sig,k);
+  });
+  if(started===false)busy(false);
 }
 function genSynopsis(){
   var p=cur();
@@ -807,16 +886,20 @@ function genSynopsis(){
   var fr=p.nlang!=="en";
   var ask=fr?"Voici le roman complet, chapitre par chapitre. Rédige pour ce roman :\n1) SYNOPSIS : un résumé vivant de 200 à 250 mots qui donne envie de lire, sans dévoiler la fin.\n2) ACCROCHE : une accroche de quatrième de couverture, 2 ou 3 phrases percutantes, style bandeau promotionnel.\n3) THÈMES : les 3 thèmes forts du roman, une ligne chacun.\nRéponds avec ces 3 sections titrées, sans texte autour."
 :"Here is the full novel, chapter by chapter. Write for this novel:\n1) SYNOPSIS: a lively 200-250 word summary that makes people want to read it, without revealing the ending.\n2) HOOK: a back-cover hook, 2-3 punchy sentences, promo style.\n3) THEMES: the 3 strong themes of the novel, one line each.\nAnswer with these 3 titled sections, nothing around.";
-  busy(true);
+  busy(true);genNote(t("wSyn"));
   var r=callMistral(P().pro,context()+gnotesTxt()+"\n\n"+novelText(p,withTxt)+"\n\n"+ask,function(txt){
-    p.synopsis=txt;save();renderSynopsis();busy(false);
+    p.synopsis=txt;save();renderSynopsis();busy(false);genNoteDone(t("doneSyn"));
   });
   if(r===false)busy(false);
 }
 function renderEdReport(){
   var d=$("ed-report");if(!d)return;
   var p=cur();
-  if(p&&p.edbible){d.style.display="";$("ed-report-body").textContent=p.edbible;}
+  if(p&&p.edbible){d.style.display="";$("ed-report-body").textContent=p.edbible;
+    var fl=$("ed-fix-list"),ft=$("t-edFixTitle"),fx=(p.edfix||[]);
+    if(fl){fl.style.display=fx.length?"":"none";fl.textContent=fx.map(function(f){return (p.nlang!=="en"?"Chapitre ":"Chapter ")+f.chapter+" : "+f.fix;}).join("\n");}
+    if(ft)ft.style.display=fx.length?"":"none";
+  }
   else d.style.display="none";
 }
 function renderSynopsis(){
@@ -836,12 +919,12 @@ function editorialReview(){
   var k={prog:"edProg",stopped:"edStopped",done:"edDone"};
   if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){runBatch(p,rwQueue.list,sig,k);return;}
   var todo=withTxt.map(function(i){return {i:i,mode:"ed:"+opt};});
-  busy(true);
+  busy(true);genNote(t("wBible"));
   setAutoNote(t("edBible"));
   var started=genEdBible(p,withTxt,function(){
     if(stopAuto){
       rwQueue={sig:sig,list:todo.slice()};
-      busy(false);
+      busy(false);genNoteHide();
       setAutoNote(t("edStopped").replace("{n}",0).replace("{t}",todo.length));
       return;
     }
@@ -852,16 +935,19 @@ function editorialReview(){
 
 // ---- Générateurs réutilisables ----
 function genPerso(cb){var p=cur(),pr=P();
+  genNote(t("wPerso"));
   callMistral(pr.pro,context()+gnotesTxt()+"\n\n"+P().pers,
     function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
       (d.characters||[]).forEach(function(c){p.characters.push({name:c.name||"",role:c.role||"secondaire",description:c.description||""});});
-      save();renderPersos();cb&&cb(true);}catch(e){showErr(t("errJson"));busy(false);cb&&cb(false);}});}
+      save();renderPersos();genNoteDone(t("donePerso"));cb&&cb(true);}catch(e){showErr(t("errJson"));busy(false);cb&&cb(false);}});}
 function genMonde(cb){var p=cur(),pr=P();
+  genNote(t("wMonde"));
   callMistral(pr.pro,context()+gnotesTxt()+"\n\n"+P().world,
-    function(txt){p.world=txt;$("world").value=txt;save();cb&&cb(true);});}
+    function(txt){p.world=txt;$("world").value=txt;save();genNoteDone(t("doneMonde"));cb&&cb(true);});}
 function genPlan(cb){var p=cur(),n=Math.max(3,Math.min(100,parseInt($("nch").value)||12));
+  genNote(t("wPlan"));
   callMistral(P().pro,context()+gnotesTxt()+"\n\n"+P().plan.replace("N",""+n),
-    function(txt){p.plan=txt;$("plan").value=txt;
+    function(txt){p.plan=txt;$("plan").value=txt;genNoteDone(t("donePlan"));
       var chs=[],re=/Chapitre\s*(\d+)\s*[:：]\s*(.+)/g,m;
       while((m=re.exec(txt))!==null){
         var rest=m[2].trim(),parts=rest.split(/\s+[—–-]\s+/),title=parts[0].trim(),summary=parts.length>1?rest.slice(title.length).replace(/^\s*[—–-]\s*/,"").trim():"";
@@ -872,6 +958,7 @@ function genPlan(cb){var p=cur(),n=Math.max(3,Math.min(100,parseInt($("nch").val
 function genExtend(){
   var p=cur(),pr=P();
   if(!p.plan||!p.chapters.length){showErr(t("errPlanFirst"));return;}
+  genNote(t("wExtend"));
   var n=p.chapters.length;
   var sel=$("ext-sel").value;
   var cnt=(sel==="auto")?0:parseInt(sel);
@@ -898,14 +985,15 @@ function genExtend(){
     if(!toAdd.length){showErr(t("errJson"));busy(false);return;}
     toAdd.forEach(function(c){p.chapters.push({title:c.title,summary:c.summary,notes:"",text:"",status:"planifie"});});
     p.plan=p.plan+"\n"+toAdd.map(function(c){return "Chapitre "+c.num+" : "+c.title+" — "+c.summary;}).join("\n");
-    save();$("plan").value=p.plan;renderChaps();updateStats();$("nch").value=Math.min(100,p.chapters.length);busy(false);
+    save();$("plan").value=p.plan;renderChaps();updateStats();$("nch").value=Math.min(100,p.chapters.length);busy(false);genNoteDone(t("doneExtend"));
   });
 }
 function genPitches(cb){var p=cur(),pr=P();
+  genNote(t("wPitches"));
   callMistral(pr.pro,gnotesTxt()+P().pitches.replace("GENRE",label(GENRES,p.genre)).replace("TITRE",p.title||"?"),
     function(txt){try{var mm=txt.match(/\{[\s\S]*\}/);var d=JSON.parse(mm?mm[0]:txt);
       var arr=(d.pitches||[]).filter(function(x){return typeof x==="string"&&x.trim();});
-      p.pitchOptions=arr.slice(0,3);save();renderPitchOptions();cb&&cb(true);}
+      p.pitchOptions=arr.slice(0,3);save();renderPitchOptions();genNoteDone(t("donePitches"));cb&&cb(true);}
     catch(e){showErr(t("errJson"));busy(false);cb&&cb(false);}});}
 
 // ---- Cartes de pitchs ----
@@ -1098,6 +1186,7 @@ $("b-print").onclick=function(){
   setTimeout(function(){try{w.print();}catch(e){}},400);
 };
 $("b-synopsis").onclick=genSynopsis;
+$("b-edfix").onclick=genEdFix;
 
 // ============================= Init =============================
 renderAll();
