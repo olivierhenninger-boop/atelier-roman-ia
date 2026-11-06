@@ -209,6 +209,18 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
       <button class="ghost small" id="b-export-md">.md</button>
       <button class="ghost small" id="b-export-epub">.epub</button>
     </div>
+    <div class="statsrow" style="margin-bottom:16px">
+      <strong id="t-rwLabel"></strong>
+      <select id="rwmode" style="max-width:240px"></select>
+      <div style="position:relative" id="rw-wrap">
+        <button class="ghost small" id="rw-drop-btn"></button>
+        <div id="rw-drop" style="display:none;position:absolute;top:110%;left:0;z-index:60;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;min-width:340px;max-height:300px;overflow:auto;box-shadow:var(--shadow)"></div>
+      </div>
+      <button class="ghost small" id="rw-sel-all"></button>
+      <button class="ghost small" id="rw-sel-none"></button>
+      <button class="small" id="b-batch-rw"></button>
+      <span class="hint" id="rw-hint" style="flex:0 0 100%;margin:0"></span>
+    </div>
     <div id="chaps"></div>
   </div>
 </div>
@@ -237,6 +249,9 @@ var T={
  words:"mots",written:"écrits",
  bWrite:"✨ Écrire le chapitre",bRegen:"↻ Réécrire entièrement",bCont:"✍️ Continuer mon texte (+1000)",bRewrite:"↻ Réécrire",
  selRewrite:"Option de réécriture…",rwDarker:"Plus sombre",rwDialog:"Plus dialogué",rwShort:"Plus court",rwDescr:"Plus descriptif",rwTense:"Plus de tension",
+ rwLabel:"Réécriture multiple :",rwHint:"Cochez les chapitres à réécrire (plusieurs choix possibles, ou tout le roman), choisissez le type de réécriture, puis cliquez sur « Réécrire la sélection ». En cas d'interruption, recliquez pour reprendre.",
+ rwModeFull:"Réécrire entièrement",pickChaps:"Chapitres à réécrire…",rwAllSel:"📖 Tout le roman ({n})",rwSomeSel:"Chapitres : {l}",rwCheckAll:"Tout le roman ({n} chapitres)",rwSelAll:"Tout",rwSelNone:"Aucun",
+ bBatchRw:"↻ Réécrire la sélection",rwProg:"Réécriture {n}/{t} : {c}",rwStopped:"⏹ Réécriture interrompue ({n}/{t}) — recliquez pour reprendre",rwDone:"✅ Réécriture terminée : {n} chapitre(s) réécrit(s)",rwPick:"Cochez au moins un chapitre à réécrire.",
  bReviewed:"✓ Révisé",bUnreview:"Dé-réviser",notesPh:"Instructions pour l'IA (optionnel) : ex. « ajoute plus de dialogues », « termine par un cliffhanger »…",
  projects:"Projets :",bNew:"+ Nouveau",bSaveproj:"💾 Sauvegarder",bImport:"📂 Importer",bDelete:"🗑 Supprimer",
  deleteConfirm:"Supprimer définitivement ce roman ?",errKey:"Ajoutez votre clé API Mistral en haut de page.",
@@ -266,6 +281,9 @@ var T={
  words:"words",written:"written",
  bWrite:"✨ Write the chapter",bRegen:"↻ Rewrite entirely",bCont:"✍️ Continue my text (+1000)",bRewrite:"↻ Rewrite",
  selRewrite:"Rewrite option…",rwDarker:"Darker",rwDialog:"More dialogue",rwShort:"Shorter",rwDescr:"More descriptive",rwTense:"More tension",
+ rwLabel:"Batch rewrite:",rwHint:"Tick the chapters to rewrite (multiple selection, or the whole novel), choose the rewrite type, then click “Rewrite selection”. If interrupted, click again to resume.",
+ rwModeFull:"Rewrite entirely",pickChaps:"Chapters to rewrite…",rwAllSel:"📖 Whole novel ({n})",rwSomeSel:"Chapters: {l}",rwCheckAll:"Whole novel ({n} chapters)",rwSelAll:"All",rwSelNone:"None",
+ bBatchRw:"↻ Rewrite selection",rwProg:"Rewriting {n}/{t}: {c}",rwStopped:"⏹ Rewrite stopped ({n}/{t}) — click again to resume",rwDone:"✅ Rewrite complete: {n} chapter(s) rewritten",rwPick:"Tick at least one chapter to rewrite.",
  bReviewed:"✓ Reviewed",bUnreview:"Un-review",notesPh:"Instructions for the AI (optional): e.g. “add more dialogue”, “end on a cliffhanger”…",
  projects:"Projects:",bNew:"+ New",bSaveproj:"💾 Save",bImport:"📂 Import",bDelete:"🗑 Delete",
  deleteConfirm:"Permanently delete this novel?",errKey:"Add your Mistral API key at the top of the page.",
@@ -302,13 +320,14 @@ function slug(s){return (s||"roman").toLowerCase().replace(/[^\w\-]+/g,"-").repl
 // ============================= API Mistral =============================
 function callMistral(sys,prompt,cb){
   var key=$("apikey").value;if(!key){showErr(t("errKey"));busy(false);return false;}
-  var body=JSON.stringify({model:$("model").value,messages:[{role:"system",content:sys},{role:"user",content:prompt}],temperature:0.8,max_tokens:4096});
-  var attempt=0,MAXTRY=5;
+  var attempt=0,MAXTRY=5,maxTok=8192,triedLower=false;
   function go(){
+    var body=JSON.stringify({model:$("model").value,messages:[{role:"system",content:sys},{role:"user",content:prompt}],temperature:0.8,max_tokens:maxTok});
     var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
     var timer=ctrl?setTimeout(function(){try{ctrl.abort();}catch(x){}},300000):null;
     fetch("https://api.mistral.ai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:body,signal:ctrl?ctrl.signal:undefined})
     .then(function(r){
+      if((r.status===400||r.status===422)&&!triedLower&&maxTok>4096){triedLower=true;maxTok=4096;setTimeout(go,500);throw new Error("LOWER");}
       if(r.status===429||r.status>=500)throw new Error("RETRY("+r.status+")");
       if(!r.ok)throw new Error("API ("+r.status+")");
       return r.json();
@@ -317,6 +336,7 @@ function callMistral(sys,prompt,cb){
     .catch(function(e){
       if(timer)clearTimeout(timer);
       var msg=(e&&e.name==="AbortError")?"timeout":((e&&e.message)||"network");
+      if(msg==="LOWER")return;
       var retryable=/^RETRY/.test(msg)||/network|failed to fetch|timeout/i.test(msg);
       if(retryable&&attempt<MAXTRY&&!(typeof stopAuto!=="undefined"&&stopAuto)){attempt++;
         if(typeof autoWriting!=="undefined"&&autoWriting&&typeof setAutoNote==="function")setAutoNote(t("autoRetry").replace("{a}",attempt));
@@ -390,7 +410,12 @@ function applyI18n(){
   $("b-pitch").textContent=t("bPitch");$("b-plan").textContent=t("bPlan");$("b-perso").textContent=t("bPerso");$("b-perso-add").textContent=t("bAddPerso");$("b-monde").textContent=t("bMonde");
   $("hero-feats").innerHTML="";
   [t("feat1"),t("feat2"),t("feat3"),t("feat4")].forEach(function(f){var s=document.createElement("div");s.className="feat";s.textContent=f;$("hero-feats").appendChild(s);});
-  $("btn-fr").classList.toggle("active",L==="fr");
+  $("t-rwLabel").textContent=t("rwLabel");
+ $("rw-hint").textContent=t("rwHint");
+ $("rw-sel-all").textContent=t("rwSelAll");
+ $("rw-sel-none").textContent=t("rwSelNone");
+ $("b-batch-rw").textContent=t("bBatchRw");
+ $("btn-fr").classList.toggle("active",L==="fr");
   $("btn-en").classList.toggle("active",L==="en");
 }
 function fillSelect(sel,list,curv){
@@ -416,7 +441,7 @@ function renderWorkspace(){
   $("nch").value=Math.max(3,Math.min(40,p.chapters.length||12));
   $("goal").value=p.goal||50000;
   keyBadge();
-  renderPersos();renderChaps();updateStats();renderPitchOptions();
+  renderPersos();renderChaps();updateStats();renderPitchOptions();renderBatchRw();
 }
 function renderAll(){applyI18n();renderWorkspace();}
 
@@ -485,7 +510,51 @@ function renderChaps(){
 var rcTimer=null;
 function renderChapsSoon(){clearTimeout(rcTimer);rcTimer=setTimeout(renderChaps,600);}
 
+// ---- Réécriture multiple : sélection de chapitres ----
+var rwSel={},rwProj=null,rwQueue=null;
+function rwSelList(p){p=p||cur();var a=[];if(!p)return a;p.chapters.forEach(function(c,i){if(rwSel[i])a.push(i);});return a;}
+function rwBtnLabel(){
+  var p=cur(),b=$("rw-drop-btn");if(!b||!p)return;
+  var sel=rwSelList(p),n=p.chapters.length;
+  if(!sel.length)b.textContent="▾ "+t("pickChaps");
+  else if(sel.length===n)b.textContent="▾ "+t("rwAllSel").replace("{n}",n);
+  else b.textContent="▾ "+t("rwSomeSel").replace("{l}",sel.length<=5?sel.map(function(i){return i+1;}).join(", "):""+sel.length);
+}
+function renderRwMode(){
+  var sel=$("rwmode");sel.innerHTML="";
+  [["full","rwModeFull"],["darker","rwDarker"],["dialog","rwDialog"],["short","rwShort"],["descr","rwDescr"],["tense","rwTense"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=t(a[1]);sel.appendChild(o);});
+  sel.onchange=function(){rwQueue=null;};
+}
+function renderRwDrop(){
+  var p=cur(),d=$("rw-drop");d.innerHTML="";
+  var all=document.createElement("label");
+  all.style.cssText="display:flex;gap:8px;align-items:center;font-weight:700;padding:4px 6px;border-bottom:1px solid var(--border);margin-bottom:6px;cursor:pointer";
+  var acb=document.createElement("input");acb.type="checkbox";acb.style.margin="0";
+  acb.checked=p.chapters.length>0&&rwSelList(p).length===p.chapters.length;
+  acb.onchange=function(){p.chapters.forEach(function(c,i){rwSel[i]=acb.checked;});renderRwDrop();rwBtnLabel();};
+  var asp=document.createElement("span");asp.textContent=t("rwCheckAll").replace("{n}",p.chapters.length);
+  all.appendChild(acb);all.appendChild(asp);d.appendChild(all);
+  p.chapters.forEach(function(c,i){
+    var lb=document.createElement("label");
+    lb.style.cssText="display:flex;gap:8px;align-items:center;padding:4px 6px;cursor:pointer;font-weight:400;color:var(--text)";
+    var cb=document.createElement("input");cb.type="checkbox";cb.style.margin="0";cb.checked=!!rwSel[i];
+    cb.onchange=function(){rwSel[i]=cb.checked;rwBtnLabel();};
+    var sp=document.createElement("span");sp.textContent=(i+1)+". "+c.title+" · "+wordCount(c).toLocaleString()+" "+t("words");
+    lb.appendChild(cb);lb.appendChild(sp);d.appendChild(lb);
+  });
+}
+function renderBatchRw(){
+  var p=cur();if(!p)return;
+  if(rwProj!==p.id){rwProj=p.id;rwSel={};rwQueue=null;}
+  renderRwMode();renderRwDrop();rwBtnLabel();
+}
+$("rw-drop-btn").onclick=function(e){if(e&&e.stopPropagation)e.stopPropagation();var d=$("rw-drop");d.style.display=(d.style.display==="none")?"":"none";};
+$("rw-sel-all").onclick=function(){var p=cur();if(!p)return;p.chapters.forEach(function(c,i){rwSel[i]=true;});renderRwDrop();rwBtnLabel();};
+$("rw-sel-none").onclick=function(){rwSel={};rwQueue=null;renderRwDrop();rwBtnLabel();};
+document.addEventListener("click",function(e){var d=$("rw-drop");if(!d||d.style.display==="none")return;var w=$("rw-wrap");if(w&&e&&e.target&&w.contains&&!w.contains(e.target))d.style.display="none";});
+
 // ============================= Génération =============================
+function chlenTarget(){var w=(cur().chlen||"std");return w==="xlong"?4000:(w==="long"?2800:1700);}
 function genChap(i,mode,cb){
   var p=cur(),c=p.chapters[i],pr=P();
   var opt=mode.indexOf("rw:")===0?mode.slice(3):null;
@@ -496,14 +565,30 @@ function genChap(i,mode,cb){
   if(mode==="full")ask=pr.full(c)+" "+pr.notes(c.notes);
   else if(mode==="suite")ask=pr.suite+" "+pr.notes(c.notes);
   else ask=pr.rw[opt]+" "+pr.notes(c.notes);
+  // poursuite automatique si le chapitre est plus court que la longueur demandée
+  var cont=0,MAXCONT=3,auto=(mode==="full"&&!opt);
   busy(true);
-  callMistral(pr.author,
-    context()+"\n\n"+pr.ctx.done+"\n"+(last3||pr.ctx.none)+"\n\n"+pr.ctx.curc+"\n"+(c.text||pr.ctx.notw)+"\n\n"+ask,
-    function(txt){
-      if(mode==="full"||opt)c.text=txt;else c.text=c.text+"\n\n"+txt;
-      c.status="redige";save();renderChaps();updateStats();
-      if(cb)cb();else busy(false);
-    });
+  function finish(){
+    c.status="redige";save();renderChaps();updateStats();
+    if(cb)cb();else busy(false);
+  }
+  function contAsk(){
+    var need=Math.max(500,chlenTarget()-wordCount(c));
+    var fr=cur().nlang!=="en";
+    return (fr?"Poursuis ce chapitre avec environ "+need+" mots supplémentaires, dans le même style dense et vivant, sans répéter ce qui est déjà écrit.":"Continue this chapter with about "+need+" more words, same dense style, without repeating what is already written.")+" "+pr.notes(c.notes);
+  }
+  function run(askTxt,isCont){
+    callMistral(pr.author,
+      context()+"\n\n"+pr.ctx.done+"\n"+(last3||pr.ctx.none)+"\n\n"+pr.ctx.curc+"\n"+(isCont?c.text.slice(-4000):(c.text||pr.ctx.notw))+"\n\n"+askTxt,
+      function(txt){
+        if(mode==="full"||opt){c.text=isCont?c.text+"\n\n"+txt:txt;}
+        else c.text=c.text+"\n\n"+txt;
+        if(auto&&cont<MAXCONT&&wordCount(c)<Math.round(chlenTarget()*0.8)){
+          cont++;run(contAsk(),true);return;}
+        finish();
+      });
+  }
+  run(ask,false);
 }
 
 // ---- Écriture automatique de tout le roman ----
@@ -525,9 +610,10 @@ document.addEventListener("visibilitychange",function(){
   if(document.visibilityState==="visible"&&autoWriting){wakeOk=true;acquireWakeLock();}
 });
 function updateAutoUI(){
-  var b=$("b-autonovel"),s=$("b-stop"),n=$("auto-note");
+  var b=$("b-autonovel"),s=$("b-stop"),n=$("auto-note"),rb=$("b-batch-rw");
   if(!b)return;
   b.disabled=autoWriting;
+  if(rb)rb.disabled=autoWriting;
   s.style.display=autoWriting?"":"none";
   s.disabled=false;
   if(!autoWriting){n.style.display="none";releaseWakeLock();}
@@ -555,6 +641,42 @@ function writeAllNovel(){
     autoCur=i;
     setAutoNote(t("autoProg").replace("{n}",done+1).replace("{t}",todo.length).replace("{c}",p.chapters[i].title));
     setTimeout(function(){genChap(i,"full",function(){done++;next();});},1500);
+  })();
+}
+
+// ---- Réécriture multiple (par chapitre ou tout le roman) ----
+function batchRewrite(){
+  var p=cur();
+  if(!p)return;
+  if(!p.chapters.length){showErr(t("noChap"));return;}
+  if(autoWriting)return;
+  var sel=rwSelList(p);
+  if(!sel.length){showErr(t("rwPick"));return;}
+  var modeSel=$("rwmode").value;
+  var sig=p.id+"|"+modeSel+"|"+sel.join(",");
+  var todo;
+  if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){todo=rwQueue.list;}
+  else{todo=sel.map(function(i){var c=p.chapters[i];return {i:i,mode:(modeSel==="full"||!c.text)?"full":("rw:"+modeSel)};});}
+  autoWriting=true;stopAuto=false;autoTotal=todo.length;updateAutoUI();busy(true);
+  wakeOk=true;wakeFailShown=false;acquireWakeLock();
+  var done=0;
+  (function next(){
+    var finished=done>=todo.length;
+    if(!finished&&cur()!==p){stopAuto=true;}
+    if(finished||stopAuto){
+      rwQueue=finished?null:{sig:sig,list:todo.slice(done)};
+      busy(false);autoWriting=false;updateAutoUI();updateStats();
+      if(finished){setAutoNote(t("rwDone").replace("{n}",done));
+        setTimeout(function(){if(!autoWriting){var nn=$("auto-note");if(nn)nn.style.display="none";}},20000);}
+      else setAutoNote(t("rwStopped").replace("{n}",done).replace("{t}",todo.length));
+      return;
+    }
+    var it=todo[done];
+    if(!p.chapters[it.i]){done++;next();return;}
+    autoCur=it.i;
+    rwQueue={sig:sig,list:todo.slice(done)};
+    setAutoNote(t("rwProg").replace("{n}",done+1).replace("{t}",todo.length).replace("{c}",p.chapters[it.i].title));
+    setTimeout(function(){genChap(it.i,it.mode,function(){done++;next();});},1500);
   })();
 }
 
@@ -675,6 +797,7 @@ $("b-monde").onclick=function(){busy(true);genMonde(function(){busy(false);});};
 function chaptersWithText(){return cur().chapters.filter(function(c){return c.text;});}
 function download(name,mime,data){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;a.click();}
 $("b-autonovel").onclick=writeAllNovel;
+$("b-batch-rw").onclick=batchRewrite;
 $("b-stop").onclick=function(){stopAuto=true;this.disabled=true;};
 $("b-export").onclick=function(){download(slug(cur().title)+".txt","text/plain;charset=utf-8",
   cur().title.toUpperCase()+"\n\n"+cur().chapters.map(function(c){return "\n\n## "+c.title+"\n\n"+c.text;}).join(""));};
