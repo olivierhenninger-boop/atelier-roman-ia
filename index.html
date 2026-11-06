@@ -255,7 +255,8 @@ var T={
  bExtend:"➕ Prolonger le roman (l'IA propose)",extAuto:"Nombre : l'IA décide",ext3:"+3 chapitres",ext6:"+6 chapitres",ext12:"+12 chapitres",
  extHint:"L'IA lit votre plan et propose de nouveaux chapitres pour prolonger l'histoire de façon pertinente (c'est elle qui choisit combien, sauf si vous imposez un nombre). Ils s'ajoutent à la suite du plan existant.",
  errPlanFirst:"Générez d'abord un plan pour ce roman (onglet ②).",
- edLabel:"Révision éditoriale :",edHint:"Relit et corrige TOUS les chapitres écrits, l'un après l'autre, avec l'option choisie. Interruption possible : recliquez pour reprendre.",
+ edLabel:"Révision éditoriale :",edHint:"Étape 1 : l'IA lit tout le roman et établit un bilan de cohérence globale (personnages, faits, fils narratifs, incohérences). Étape 2 : elle révise chaque chapitre écrit en respectant ce bilan. Interruption possible : recliquez pour reprendre.",
+ edBible:"📖 Étape 1/2 : lecture du roman et bilan de cohérence globale…",
  bEdRev:"🔍 Réviser tout le texte écrit",edFull:"🧹 Correction complète (style, fluidité, répétitions)",edEnrich:"🎨 Enrichissement littéraire",edCoh:"🧩 Cohérence personnages & intrigue",edRythm:"⚡ Rythme & tension",
  edProg:"Révision {n}/{t} : {c}",edStopped:"⏹ Révision interrompue ({n}/{t}) — recliquez pour reprendre",edDone:"✅ Révision terminée : {n} chapitre(s) révisé(s)",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
@@ -294,7 +295,8 @@ var T={
  bExtend:"➕ Extend the novel (AI proposes)",extAuto:"How many: the AI decides",ext3:"+3 chapters",ext6:"+6 chapters",ext12:"+12 chapters",
  extHint:"The AI reads your outline and proposes new chapters to extend the story in a relevant way (it decides how many, unless you force a number). They are appended to the existing outline.",
  errPlanFirst:"Generate an outline for this novel first (tab ②).",
- edLabel:"Editorial review:",edHint:"Rereads and revises ALL written chapters, one after another, with the chosen option. You can stop: click again to resume.",
+ edLabel:"Editorial review:",edHint:"Step 1: the AI reads the whole novel and builds a global coherence brief (characters, facts, narrative threads, inconsistencies). Step 2: it revises every written chapter while respecting that brief. You can stop: click again to resume.",
+ edBible:"📖 Step 1/2: reading the novel and building the global coherence brief…",
  bEdRev:"🔍 Review all written text",edFull:"🧹 Full copy-edit (style, flow, repetitions)",edEnrich:"🎨 Literary enrichment",edCoh:"🧩 Character & plot consistency",edRythm:"⚡ Pacing & tension",
  edProg:"Reviewing {n}/{t}: {c}",edStopped:"⏹ Review stopped ({n}/{t}) — click again to resume",edDone:"✅ Review complete: {n} chapter(s) revised",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
@@ -615,7 +617,7 @@ function genChap(i,mode,cb){
   var ask;
   if(mode==="full")ask=pr.full(c)+" "+pr.notes(c.notes);
   else if(mode==="suite")ask=pr.suite+" "+pr.notes(c.notes);
-  else if(ed)ask=pr.ed[ed]+" "+pr.notes(c.notes);
+  else if(ed)ask=(p.edbible?((p.nlang!=="en"?"Voici le bilan de cohérence global du roman, établi à partir de l'ensemble des chapitres ; respecte-le pendant la révision :\n":"Here is the global coherence brief of the novel, built from all chapters; follow it while revising:\n")+p.edbible+"\n\n"):"")+pr.ed[ed]+" "+pr.notes(c.notes);
   else ask=pr.rw[opt]+" "+pr.notes(c.notes);
   // poursuite automatique si le chapitre est plus court que la longueur demandée
   var cont=0,MAXCONT=3,auto=(mode==="full"&&!opt);
@@ -738,7 +740,22 @@ function runBatch(p,todo,sig,k){
   })();
 }
 
-// ---- Révision éditoriale totale du texte écrit ----
+// ---- Révision éditoriale totale : bilan de cohérence GLOBAL puis révision chapitre par chapitre ----
+function genEdBible(p,idxs,cb){
+  var pr=P(),fr=p.nlang!=="en";
+  var parts=[],total=0;
+  idxs.forEach(function(i){
+    var c=p.chapters[i],txt=c.text;
+    if(total+txt.length>120000)txt=txt.slice(0,Math.max(3000,120000-total))+"…";
+    total+=txt.length;
+    parts.push((fr?"Chapitre ":"Chapter ")+(i+1)+" : "+c.title+"\n"+txt);
+  });
+  var ask=fr?"Voici le roman complet, chapitre par chapitre. Établis un bilan éditorial GLOBAL destiné à guider une révision chapitre par chapitre en assurant la cohérence de l'ensemble : 1) Personnages : noms, traits, motivations, évolution (arcs). 2) Faits établis et chronologie. 3) Fils narratifs ouverts ou promis au lecteur. 4) Incohérences, contradictions ou oublis entre chapitres, en indiquant les numéros de chapitres concernés. 5) Ton et style à conserver. Réponds en listes claires, sans texte autour, 500 mots maximum."
+:"Here is the full novel, chapter by chapter. Write a GLOBAL editorial brief to guide a chapter-by-chapter revision ensuring overall consistency: 1) Characters: names, traits, motivations, arcs. 2) Established facts and chronology. 3) Open narrative threads or promises made to the reader. 4) Inconsistencies, contradictions or oversights between chapters, with chapter numbers. 5) Tone and style to preserve. Answer in clear lists, nothing around, 500 words max.";
+  return callMistral(pr.pro,context()+"\n\n"+parts.join("\n\n")+"\n\n"+ask,function(txt){
+    p.edbible=txt;save();cb(true);
+  });
+}
 function editorialReview(){
   var p=cur();
   if(!p)return;
@@ -747,10 +764,21 @@ function editorialReview(){
   if(!withTxt.length){showErr(t("noEpub"));return;}
   var opt=$("edmode").value;
   var sig="ed|"+opt;
-  var todo;
-  if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){todo=rwQueue.list;}
-  else{todo=withTxt.map(function(i){return {i:i,mode:"ed:"+opt};});}
-  runBatch(p,todo,sig,{prog:"edProg",stopped:"edStopped",done:"edDone"});
+  var k={prog:"edProg",stopped:"edStopped",done:"edDone"};
+  if(rwQueue&&rwQueue.sig===sig&&rwQueue.list.length){runBatch(p,rwQueue.list,sig,k);return;}
+  var todo=withTxt.map(function(i){return {i:i,mode:"ed:"+opt};});
+  busy(true);
+  setAutoNote(t("edBible"));
+  var started=genEdBible(p,withTxt,function(){
+    if(stopAuto){
+      rwQueue={sig:sig,list:todo.slice()};
+      busy(false);
+      setAutoNote(t("edStopped").replace("{n}",0).replace("{t}",todo.length));
+      return;
+    }
+    runBatch(p,todo,sig,k);
+  });
+  if(started===false)busy(false);
 }
 
 // ---- Générateurs réutilisables ----
