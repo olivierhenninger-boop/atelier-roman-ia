@@ -164,7 +164,8 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
     <h2 class="paneltitle" id="t-hPlan"></h2>
     <div class="row" style="align-items:center">
       <div style="flex:0 0 auto"><label style="margin:0" id="t-lNCh"></label></div>
-      <div style="flex:0 0 80px"><input type="number" id="nch" value="12" min="3" max="40"></div>
+      <div style="flex:0 0 auto"><select id="nch-sel"></select></div>
+      <div style="flex:0 0 90px"><input type="number" id="nch" value="12" min="3" max="100"></div>
       <div style="flex:0 0 auto"><button id="b-plan"></button></div>
     </div>
     <textarea id="plan" rows="16" style="margin-top:10px" class="serif"></textarea>
@@ -208,6 +209,8 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
       <button class="ghost small" id="b-export">.txt</button>
       <button class="ghost small" id="b-export-md">.md</button>
       <button class="ghost small" id="b-export-epub">.epub</button>
+      <button class="ghost small" id="b-export-docx">.docx</button>
+      <button class="ghost small" id="b-print">🖨 PDF</button>
     </div>
     <div class="statsrow" style="margin-bottom:16px">
       <strong id="t-rwLabel"></strong>
@@ -237,6 +240,7 @@ var T={
  lPitch:"Pitch / idée de départ",bPitch:"✨ Générer 3 pitchs",pitchHint:"Sélectionnez un pitch : personnages, univers et plan seront générés automatiquement.",
  choose:"✓ Utiliser ce pitch",auto1:"Étape 1/3 : personnages…",auto2:"Étape 2/3 : univers…",auto3:"Étape 3/3 : plan…",autoDone:"✅ Personnages, univers et plan générés ! Rédigez vos chapitres dans l'onglet ⑤.",
  lNCh:"Chapitres :",bPlan:"✨ Générer le plan",
+ nchSizes:"Tailles proposées…",errPrint:"Autorisez les fenêtres surgissantes dans votre navigateur pour imprimer ou créer un PDF.",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
@@ -269,6 +273,7 @@ var T={
  lPitch:"Pitch / starting idea",bPitch:"✨ Generate 3 pitches",pitchHint:"Pick a pitch: characters, world and outline will be generated automatically.",
  choose:"✓ Use this pitch",auto1:"Step 1/3: characters…",auto2:"Step 2/3: world…",auto3:"Step 3/3: outline…",autoDone:"✅ Characters, world and outline generated! Write your chapters in tab ⑤.",
  lNCh:"Chapters:",bPlan:"✨ Generate the outline",
+ nchSizes:"Suggested sizes…",errPrint:"Allow pop-up windows in your browser to print or create a PDF.",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
@@ -300,6 +305,7 @@ function t(k){return (T[L]&&T[L][k])||T.fr[k];}
 
 var GENRES=[{v:"fantasy",fr:"Fantasy",en:"Fantasy"},{v:"scifi",fr:"Science-fiction",en:"Science fiction"},{v:"polar",fr:"Policier",en:"Detective"},{v:"thriller",fr:"Thriller",en:"Thriller"},{v:"romance",fr:"Romance",en:"Romance"},{v:"historique",fr:"Historique",en:"Historical"},{v:"horreur",fr:"Horreur",en:"Horror"},{v:"aventure",fr:"Aventure",en:"Adventure"},{v:"contemporain",fr:"Contemporain",en:"Contemporary"},{v:"medieval",fr:"Médiéval",en:"Medieval"}];
 var STYLES=[{v:"classic",fr:"Roman classique, 3e personne",en:"Classic novel, third person"},{v:"p1",fr:"À la première personne",en:"First person"},{v:"poetique",fr:"Style littéraire poétique",en:"Poetic literary style"},{v:"ya",fr:"Style jeune adulte",en:"Young adult style"},{v:"noir",fr:"Style noir et punchy",en:"Hard-boiled and punchy"},{v:"humour",fr:"Humoristique",en:"Humorous"}];
+var SIZES=[{v:12,fr:"Court (12 chap.)",en:"Short (12 ch.)"},{v:18,fr:"18 chapitres",en:"18 chapters"},{v:24,fr:"Moyen (24 chap.)",en:"Medium (24 ch.)"},{v:30,fr:"30 chapitres",en:"30 chapters"},{v:36,fr:"Long (36 chap.)",en:"Long (36 ch.)"},{v:48,fr:"48 chapitres",en:"48 chapters"},{v:60,fr:"Très long (60 chap.)",en:"Extra long (60 ch.)"},{v:80,fr:"80 chapitres",en:"80 chapters"},{v:100,fr:"Saga (100 chap.)",en:"Saga (100 ch.)"}];
 function label(list,v){for(var i=0;i<list.length;i++){if(list[i].v===v)return list[i][L];}return list[0][L];}
 
 // ============================= Données =============================
@@ -434,11 +440,15 @@ function renderWorkspace(){
   fillSelect($("genre"),GENRES,p.genre);fillSelect($("style"),STYLES,p.style);
   var nl=$("nlang");nl.innerHTML="";[["fr","Français"],["en","English"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=a[1];if(a[0]===p.nlang)o.selected=true;nl.appendChild(o);});
   fillSelect($("hero-genre"),GENRES,p.genre);
+  var ns=$("nch-sel");ns.innerHTML="";
+  var o0=document.createElement("option");o0.value="";o0.textContent=t("nchSizes");ns.appendChild(o0);
+  SIZES.forEach(function(s){var o=document.createElement("option");o.value=s.v;o.textContent=s[L]||s.fr;ns.appendChild(o);});
+  ns.onchange=function(){if(this.value)$("nch").value=this.value;};
   var cl=$("chlen");cl.innerHTML="";
   [["std","chStd"],["long","chLong"],["xlong","chXLong"]].forEach(function(a){var o=document.createElement("option");o.value=a[0];o.textContent=t(a[1]);if((p.chlen||"std")===a[0])o.selected=true;cl.appendChild(o);});
   cl.onchange=function(){p.chlen=this.value;save();};
   $("title").value=p.title;$("pitch").value=p.pitch;$("plan").value=p.plan;$("world").value=p.world;
-  $("nch").value=Math.max(3,Math.min(40,p.chapters.length||12));
+  $("nch").value=Math.max(3,Math.min(100,p.chapters.length||12));
   $("goal").value=p.goal||50000;
   keyBadge();
   renderPersos();renderChaps();updateStats();renderPitchOptions();renderBatchRw();
@@ -689,7 +699,7 @@ function genPerso(cb){var p=cur(),pr=P();
 function genMonde(cb){var p=cur(),pr=P();
   callMistral(pr.pro,context()+"\n\n"+P().world,
     function(txt){p.world=txt;$("world").value=txt;save();cb&&cb(true);});}
-function genPlan(cb){var p=cur(),n=parseInt($("nch").value)||12;
+function genPlan(cb){var p=cur(),n=Math.max(3,Math.min(100,parseInt($("nch").value)||12));
   callMistral(P().pro,context()+"\n\n"+P().plan.replace("N",""+n),
     function(txt){p.plan=txt;$("plan").value=txt;
       var chs=[],re=/Chapitre\s*(\d+)\s*[:：]\s*(.+)/g,m;
@@ -850,6 +860,47 @@ $("b-export-epub").onclick=function(){
   files.push({name:"OEBPS/toc.ncx",data:strBytes(
     '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd"><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="'+uuid+'"/></head><docTitle><text>'+esc(p.title)+'</text></docTitle><navMap>'+ncxNav+'</navMap></ncx>')});
   var a=document.createElement("a");a.href=URL.createObjectURL(makeZip(files));a.download=slug(p.title)+".epub";a.click();};
+
+// ---- Export Word (.docx) ----
+$("b-export-docx").onclick=function(){
+  var p=cur(),chs=chaptersWithText();
+  if(!chs.length){showErr(t("noEpub"));return;}
+  function wrun(txt,b,sz){
+    var rpr=(b||sz)?"<w:rPr>"+(b?"<w:b/>":"")+(sz?'<w:sz w:val="'+sz+'"/>':"")+"</w:rPr>":"";
+    return "<w:r>"+rpr+'<w:t xml:space="preserve">'+esc(txt)+"</w:t></w:r>";
+  }
+  function wpar(runs){return "<w:p>"+runs+"</w:p>";}
+  var body=wpar(wrun(p.title||"",true,56));
+  chs.forEach(function(c){
+    body+=wpar(wrun(c.title,true,32));
+    c.text.split(/\n\s*\n/).forEach(function(pp){
+      if(!pp.trim())return;
+      body+=wpar(pp.trim().split(/\n/).map(function(l,i){return (i?"<w:r><w:br/></w:r>":"")+wrun(l);}).join(""));
+    });
+  });
+  var doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:body></w:document>';
+  var files=[
+    {name:"[Content_Types].xml",data:strBytes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>')},
+    {name:"_rels/.rels",data:strBytes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')},
+    {name:"word/document.xml",data:strBytes(doc)}
+  ];
+  var a=document.createElement("a");a.href=URL.createObjectURL(makeZip(files));a.download=slug(p.title)+".docx";a.click();
+};
+
+// ---- Impression / PDF ----
+$("b-print").onclick=function(){
+  var p=cur(),chs=chaptersWithText();
+  if(!chs.length){showErr(t("noEpub"));return;}
+  var html='<!doctype html><html><head><meta charset="UTF-8"><title>'+esc(p.title)+'</title><style>body{font-family:Georgia,"Times New Roman",serif;max-width:16.5cm;margin:2cm auto;color:#111;line-height:1.7}h1{text-align:center;font-size:1.9em;margin:.5em 0 1.5em}h2{page-break-before:always;margin-top:1.4em}p{margin:0 0 .35em;text-indent:1.5em}p.first{text-indent:0}@media print{body{margin:0}}</style></head><body><h1>'+esc(p.title)+'</h1>';
+  chs.forEach(function(c){
+    html+='<h2>'+esc(c.title)+'</h2>'+c.text.split(/\n\s*\n/).map(function(pp,i){return '<p'+(i?'':' class="first"')+'>'+esc(pp.trim()).replace(/\n/g,'<br/>')+'</p>';}).join("");
+  });
+  html+='</body></html>';
+  var w=(typeof window!=="undefined")?window.open("","_blank"):null;
+  if(!w){showErr(t("errPrint"));return;}
+  w.document.write(html);w.document.close();w.focus();
+  setTimeout(function(){try{w.print();}catch(e){}},400);
+};
 
 // ============================= Init =============================
 renderAll();
