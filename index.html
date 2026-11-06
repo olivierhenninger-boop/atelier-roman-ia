@@ -318,7 +318,7 @@ function callMistral(sys,prompt,cb){
       if(timer)clearTimeout(timer);
       var msg=(e&&e.name==="AbortError")?"timeout":((e&&e.message)||"network");
       var retryable=/^RETRY/.test(msg)||/network|failed to fetch|timeout/i.test(msg);
-      if(retryable&&attempt<MAXTRY){attempt++;
+      if(retryable&&attempt<MAXTRY&&!(typeof stopAuto!=="undefined"&&stopAuto)){attempt++;
         if(typeof autoWriting!=="undefined"&&autoWriting&&typeof setAutoNote==="function")setAutoNote(t("autoRetry").replace("{a}",attempt));
         setTimeout(go,attempt*5000);
         return;}
@@ -326,7 +326,10 @@ function callMistral(sys,prompt,cb){
       busy(false);
       if(typeof autoWriting!=="undefined"&&autoWriting){
         autoWriting=false;updateAutoUI();
-        if(typeof autoCur!=="undefined")setAutoNote(t("autoErr").replace("{n}",autoCur+1)+" ("+msg+")");
+        if(typeof autoCur!=="undefined"){
+          if(typeof stopAuto!=="undefined"&&stopAuto)setAutoNote(t("autoStopped").replace("{n}",autoCur).replace("{t}",typeof autoTotal!=="undefined"?autoTotal:0));
+          else setAutoNote(t("autoErr").replace("{n}",autoCur+1)+" ("+msg+")");
+        }
       }
     });
   }
@@ -504,7 +507,7 @@ function genChap(i,mode,cb){
 }
 
 // ---- Écriture automatique de tout le roman ----
-var autoWriting=false,stopAuto=false,autoCur=0;
+var autoWriting=false,stopAuto=false,autoCur=0,autoTotal=0;
 function updateAutoUI(){
   var b=$("b-autonovel"),s=$("b-stop"),n=$("auto-note");
   if(!b)return;
@@ -522,7 +525,7 @@ function writeAllNovel(){
   var start=last+1,todo=[];
   for(var i=start;i<p.chapters.length;i++)if(!p.chapters[i].text)todo.push(i);
   if(!todo.length){showErr(t("allDone"));return;}
-  autoWriting=true;stopAuto=false;updateAutoUI();busy(true);
+  autoWriting=true;stopAuto=false;autoTotal=todo.length;updateAutoUI();busy(true);
   var done=0;
   (function next(){
     if(cur()!==p)stopAuto=true;
