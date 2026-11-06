@@ -303,26 +303,30 @@ function slug(s){return (s||"roman").toLowerCase().replace(/[^\w\-]+/g,"-").repl
 function callMistral(sys,prompt,cb){
   var key=$("apikey").value;if(!key){showErr(t("errKey"));busy(false);return false;}
   var body=JSON.stringify({model:$("model").value,messages:[{role:"system",content:sys},{role:"user",content:prompt}],temperature:0.8,max_tokens:4096});
-  var attempt=0;
+  var attempt=0,MAXTRY=5;
   function go(){
-    fetch("https://api.mistral.ai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:body})
+    var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+    var timer=ctrl?setTimeout(function(){try{ctrl.abort();}catch(x){}},300000):null;
+    fetch("https://api.mistral.ai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:body,signal:ctrl?ctrl.signal:undefined})
     .then(function(r){
       if(r.status===429||r.status>=500)throw new Error("RETRY("+r.status+")");
       if(!r.ok)throw new Error("API ("+r.status+")");
       return r.json();
     })
-    .then(function(d){cb(d.choices&&d.choices[0]?d.choices[0].message.content:"");})
+    .then(function(d){if(timer)clearTimeout(timer);cb(d.choices&&d.choices[0]?d.choices[0].message.content:"");})
     .catch(function(e){
-      var retryable=/^RETRY/.test(e.message)||/network|failed to fetch/i.test(e.message);
-      if(retryable&&attempt<4){attempt++;
+      if(timer)clearTimeout(timer);
+      var msg=(e&&e.name==="AbortError")?"timeout":((e&&e.message)||"network");
+      var retryable=/^RETRY/.test(msg)||/network|failed to fetch|timeout/i.test(msg);
+      if(retryable&&attempt<MAXTRY){attempt++;
         if(typeof autoWriting!=="undefined"&&autoWriting&&typeof setAutoNote==="function")setAutoNote(t("autoRetry").replace("{a}",attempt));
-        setTimeout(go,attempt*4000);
+        setTimeout(go,attempt*5000);
         return;}
-      showErr(e.message.replace(/^RETRY\((\d+)\)$/,"API ($1)"));
+      showErr(msg.replace(/^RETRY\((\d+)\)$/,"API ($1)"));
       busy(false);
       if(typeof autoWriting!=="undefined"&&autoWriting){
         autoWriting=false;updateAutoUI();
-        if(typeof autoCur!=="undefined")setAutoNote(t("autoErr").replace("{n}",autoCur+1));
+        if(typeof autoCur!=="undefined")setAutoNote(t("autoErr").replace("{n}",autoCur+1)+" ("+msg+")");
       }
     });
   }
@@ -530,7 +534,7 @@ function writeAllNovel(){
     var i=todo[done];
     autoCur=i;
     setAutoNote(t("autoProg").replace("{n}",done+1).replace("{t}",todo.length).replace("{c}",p.chapters[i].title));
-    setTimeout(function(){genChap(i,"full",function(){done++;next();});},700);
+    setTimeout(function(){genChap(i,"full",function(){done++;next();});},1500);
   })();
 }
 
