@@ -220,6 +220,7 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
       <button class="ghost small" id="b-export-epub">.epub</button>
       <button class="ghost small" id="b-export-docx">.docx</button>
       <button class="ghost small" id="b-print">🖨 PDF</button>
+      <button class="ghost small" id="b-read"></button>
       <button class="ghost small" id="b-synopsis"></button>
     </div>
     <div class="statsrow" style="margin-bottom:16px">
@@ -298,6 +299,12 @@ var T={
  fixDone:"✅ Correctifs appliqués : {n} chapitre(s) modifié(s)",
  fixNone:"✅ Aucun correctif nécessaire d'après le rapport.",
  needReport:"Lancez d'abord « 🔍 Réviser tout le texte écrit » pour obtenir le rapport éditorial, puis revenez ici.",
+ bRead:"📖 Lire le roman",
+ dlNovel:"💾 Télécharger le roman",
+ printNovel:"🖨 Imprimer / PDF",
+ closeNovel:"✕ Fermer",
+ doneRead:"✅ Roman ouvert dans un nouvel onglet.",
+ doneDl:"✅ Roman téléchargé sur votre ordinateur.",
  planHint:"Les chapitres détectés apparaîtront dans l'onglet ⑤ Rédaction, avec leur résumé.",
  hPerso:"Personnages",bPerso:"✨ Générer 4 personnages",bAddPerso:"+ Ajouter manuellement",noPerso:"Aucun personnage pour l'instant.",
  roles:["Protagoniste","Antagoniste","Secondaire","Mentor"],
@@ -361,6 +368,12 @@ var T={
  fixDone:"✅ Fixes applied: {n} chapter(s) modified",
  fixNone:"✅ No fix needed according to the report.",
  needReport:"First run “🔍 Review all written text” to get the editorial report, then come back here.",
+ bRead:"📖 Read the novel",
+ dlNovel:"💾 Download the novel",
+ printNovel:"🖨 Print / PDF",
+ closeNovel:"✕ Close",
+ doneRead:"✅ Novel opened in a new tab.",
+ doneDl:"✅ Novel downloaded to your computer.",
  planHint:"Detected chapters will appear in the ⑤ Writing tab, together with their summary.",
  hPerso:"Characters",bPerso:"✨ Generate 4 characters",bAddPerso:"+ Add manually",noPerso:"No character yet.",
  roles:["Protagonist","Antagonist","Secondary","Mentor"],
@@ -526,6 +539,7 @@ function applyI18n(){
  $("t-synTitle").textContent=t("synTitle");
  $("b-edfix").textContent=t("bEdFix");
  $("t-edFixTitle").textContent=t("edFixTitle");
+ $("b-read").textContent=t("bRead");
  $("btn-fr").classList.toggle("active",L==="fr");
   $("btn-en").classList.toggle("active",L==="en");
 }
@@ -1171,19 +1185,40 @@ $("b-export-docx").onclick=function(){
   var a=document.createElement("a");a.href=URL.createObjectURL(makeZip(files));a.download=slug(p.title)+".docx";a.click();
 };
 
-// ---- Impression / PDF ----
-$("b-print").onclick=function(){
-  var p=cur(),chs=chaptersWithText();
-  if(!chs.length){showErr(t("noEpub"));return;}
-  var html='<!doctype html><html><head><meta charset="UTF-8"><title>'+esc(p.title)+'</title><style>body{font-family:Georgia,"Times New Roman",serif;max-width:16.5cm;margin:2cm auto;color:#111;line-height:1.7}h1{text-align:center;font-size:1.9em;margin:.5em 0 1.5em}h2{page-break-before:always;margin-top:1.4em}p{margin:0 0 .35em;text-indent:1.5em}p.first{text-indent:0}@media print{body{margin:0}}</style></head><body><h1>'+esc(p.title)+'</h1>';
+// ---- Roman complet : lecture directe, telechargement, impression / PDF ----
+function novelHtml(p,toolbar){
+  var chs=chaptersWithText();
+  var css='body{font-family:Georgia,"Times New Roman",serif;max-width:16.5cm;margin:2cm auto;color:#111;line-height:1.7}h1{text-align:center;font-size:1.9em;margin:.5em 0 1.5em}h2{page-break-before:always;margin-top:1.4em}p{margin:0 0 .35em;text-indent:1.5em}p.first{text-indent:0}@media print{body{margin:0;margin-top:0}#nvbar{display:none}}';
+  if(toolbar)css+='#nvbar{position:fixed;top:0;left:0;right:0;background:#222;color:#fff;padding:8px 12px;display:flex;gap:10px;z-index:9}#nvbar button{cursor:pointer}body{margin-top:56px}';
+  var html='<!doctype html><html><head><meta charset="UTF-8"><title>'+esc(p.title)+'</title><style>'+css+'</style></head><body>';
+  if(toolbar){
+    html+='<div id="nvbar"><button onclick="dlNov()">💾 '+t("dlNovel")+'</button><button onclick="window.print()">🖨 '+t("printNovel")+'</button><button onclick="window.close()">✕ '+t("closeNovel")+'</button></div>'+'<script>function dlNov(){var b=new Blob(["<!doctype html>\\n"+document.documentElement.outerHTML],{type:"text/html"});var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download="'+slug(p.title)+'.html";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u)},2000);}<\/script>';
+  }
+  html+='<h1>'+esc(p.title)+'</h1>';
   chs.forEach(function(c){
     html+='<h2>'+esc(c.title)+'</h2>'+c.text.split(/\n\s*\n/).map(function(pp,i){return '<p'+(i?'':' class="first"')+'>'+esc(pp.trim()).replace(/\n/g,'<br/>')+'</p>';}).join("");
   });
-  html+='</body></html>';
+  return html+'</body></html>';
+}
+$("b-print").onclick=function(){
+  var p=cur(),chs=chaptersWithText();
+  if(!chs.length){showErr(t("noEpub"));return;}
   var w=(typeof window!=="undefined")?window.open("","_blank"):null;
   if(!w){showErr(t("errPrint"));return;}
-  w.document.write(html);w.document.close();w.focus();
+  w.document.write(novelHtml(p,false));w.document.close();w.focus();
   setTimeout(function(){try{w.print();}catch(e){}},400);
+};
+$("b-read").onclick=function(){
+  var p=cur(),chs=chaptersWithText();
+  if(!chs.length){showErr(t("noEpub"));return;}
+  var html=novelHtml(p,true);
+  var w=(typeof window!=="undefined")?window.open("","_blank"):null;
+  if(!w){
+    var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=slug(p.title)+".html";a.click();
+    genNoteDone(t("doneDl"));return;
+  }
+  w.document.write(html);w.document.close();w.focus();
+  genNoteDone(t("doneRead"));
 };
 $("b-synopsis").onclick=genSynopsis;
 $("b-edfix").onclick=genEdFix;
