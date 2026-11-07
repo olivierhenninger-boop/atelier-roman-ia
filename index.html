@@ -324,7 +324,7 @@ var T={
  rwModeFull:"Réécrire entièrement",pickChaps:"Chapitres à réécrire…",rwAllSel:"📖 Tout le roman ({n})",rwSomeSel:"Chapitres : {l}",rwCheckAll:"Tout le roman ({n} chapitres)",rwSelAll:"Tout",rwSelNone:"Aucun",
  bBatchRw:"↻ Réécrire la sélection",rwProg:"Réécriture {n}/{t} : {c}",rwStopped:"⏹ Réécriture interrompue ({n}/{t}) — recliquez pour reprendre",rwDone:"✅ Réécriture terminée : {n} chapitre(s) réécrit(s)",rwPick:"Cochez au moins un chapitre à réécrire.",
  bReviewed:"✓ Révisé",bUnreview:"Dé-réviser",notesPh:"Instructions pour l'IA (optionnel) : ex. « ajoute plus de dialogues », « termine par un cliffhanger »…",
- projects:"Projets :",bNew:"+ Nouveau",bSaveproj:"💾 Sauvegarder",bImport:"📂 Importer",bDelete:"🗑 Archiver",bArch:"🗂 Archives",bUnarch:"↩ Restaurer",bDelForever:"🗑 Supprimer définitivement",archEmpty:"Aucun roman archivé.",archMoved:"✅ Romans précédents déplacés dans les Archives.",
+ projects:"Projets :",bNew:"+ Nouveau",bSaveproj:"💾 Sauvegarder",bImport:"📂 Importer",bDelete:"🗑 Archiver",bArch:"🗂 Archives",bUnarch:"↩ Restaurer",bDelForever:"🗑 Supprimer définitivement",archEmpty:"Aucun roman archivé.",archMoved:"✅ Romans précédents déplacés dans les Archives.",quotaSlim:"⚠️ Mémoire du navigateur presque pleine : les anciennes versions de chapitres ont été allégées. Vos textes sont intacts et bien sauvegardés.",quotaFull:"⚠️ Mémoire du navigateur PLEINE : impossible de sauvegarder. Cliquez sur 💾 Sauvegarder pour exporter une copie, puis supprimez des romans dans 🗂 Archives.",
  deleteConfirm:"Supprimer définitivement ce roman ?",errKey:"Ajoutez votre clé API Mistral en haut de page.",
  noEpub:"Écrivez au moins un chapitre avant d'exporter.",errJson:"Réponse IA illisible, réessayez.",
  heroOverline:"Bienvenue dans l'atelier",
@@ -394,7 +394,7 @@ var T={
  rwModeFull:"Rewrite entirely",pickChaps:"Chapters to rewrite…",rwAllSel:"📖 Whole novel ({n})",rwSomeSel:"Chapters: {l}",rwCheckAll:"Whole novel ({n} chapters)",rwSelAll:"All",rwSelNone:"None",
  bBatchRw:"↻ Rewrite selection",rwProg:"Rewriting {n}/{t}: {c}",rwStopped:"⏹ Rewrite stopped ({n}/{t}) — click again to resume",rwDone:"✅ Rewrite complete: {n} chapter(s) rewritten",rwPick:"Tick at least one chapter to rewrite.",
  bReviewed:"✓ Reviewed",bUnreview:"Un-review",notesPh:"Instructions for the AI (optional): e.g. “add more dialogue”, “end on a cliffhanger”…",
- projects:"Projects:",bNew:"+ New",bSaveproj:"💾 Save",bImport:"📂 Import",bDelete:"🗑 Archive",bArch:"🗂 Archives",bUnarch:"↩ Restore",bDelForever:"🗑 Delete permanently",archEmpty:"No archived novel.",archMoved:"✅ Previous novels moved to the Archives.",
+ projects:"Projects:",bNew:"+ New",bSaveproj:"💾 Save",bImport:"📂 Import",bDelete:"🗑 Archive",bArch:"🗂 Archives",bUnarch:"↩ Restore",bDelForever:"🗑 Delete permanently",archEmpty:"No archived novel.",archMoved:"✅ Previous novels moved to the Archives.",quotaSlim:"⚠️ Browser storage nearly full: old chapter versions were trimmed. Your texts are intact and safely saved.",quotaFull:"⚠️ Browser storage FULL: unable to save. Click 💾 Save to export a copy, then delete novels in 🗂 Archives.",
  deleteConfirm:"Permanently delete this novel?",errKey:"Add your Mistral API key at the top of the page.",
  noEpub:"Write at least one chapter before exporting.",errJson:"Unreadable AI answer, try again.",
  heroOverline:"Welcome to the workshop",
@@ -419,12 +419,20 @@ try{var s=localStorage.getItem("aria-db");if(s){DB=JSON.parse(s);if(!DB.archives
   if(old){var o=JSON.parse(old);
     if(o&&(o.title||o.pitch||o.plan||(o.chapters&&o.chapters.length))){o.id="p"+Date.now();o.nlang=o.nlang||"fr";o.goal=o.goal||50000;o.chlen=o.chlen||"std";DB.projects.push(o);DB.current=o.id;}}}
 }catch(e){}
-function save(){try{localStorage.setItem("aria-db",JSON.stringify(DB));}catch(e){}}
+function save(){try{localStorage.setItem("aria-db",JSON.stringify(DB));}catch(e){var ok=false;if(slimForQuota()){try{localStorage.setItem("aria-db",JSON.stringify(DB));ok=true;}catch(e2){}}if(ok){genNoteDone(t("quotaSlim"));}else{showErr(t("quotaFull"));}}}
+function slimForQuota(){
+  var changed=false;
+  (DB.archives||[]).forEach(function(p){(p.chapters||[]).forEach(function(c){if(c.versions&&c.versions.length){c.versions=[];changed=true;}});});
+  (DB.projects||[]).forEach(function(p){(p.chapters||[]).forEach(function(c){if(c.versions&&c.versions.length>1){c.versions=c.versions.slice(-1);changed=true;}});});
+  return changed;
+}
 function cur(){for(var i=0;i<DB.projects.length;i++){if(DB.projects[i].id===DB.current)return DB.projects[i];}return null;}
 function newProject(title,genre){var p={id:"p"+Date.now(),title:title||"",genre:genre||"fantasy",style:"classic",nlang:L==="en"?"en":"fr",pitch:"",plan:"",world:"",characters:[],chapters:[],goal:50000,chlen:"std"};DB.projects.push(p);DB.current=p.id;save();return p;}
 // ---- Archives : l'ancien est effacé de la liste mais gardé en mémoire ----
-function archiveProject(id){DB.archives=DB.archives||[];var i=DB.projects.map(function(x){return x.id;}).indexOf(id);if(i<0)return;DB.archives.unshift(DB.projects[i]);DB.projects.splice(i,1);if(DB.current===id)DB.current=DB.projects.length?DB.projects[0].id:null;save();}
-function archiveAll(){DB.archives=DB.archives||[];while(DB.projects.length)DB.archives.unshift(DB.projects.pop());DB.current=null;save();}
+// (copies archivées allégées : textes conservés, anciennes versions retirées pour ne pas saturer la mémoire du navigateur)
+function archStrip(p){(p.chapters||[]).forEach(function(c){if(c.versions&&c.versions.length)c.versions=[];});return p;}
+function archiveProject(id){DB.archives=DB.archives||[];var i=DB.projects.map(function(x){return x.id;}).indexOf(id);if(i<0)return;DB.archives.unshift(archStrip(DB.projects[i]));DB.projects.splice(i,1);if(DB.current===id)DB.current=DB.projects.length?DB.projects[0].id:null;save();}
+function archiveAll(){DB.archives=DB.archives||[];while(DB.projects.length)DB.archives.unshift(archStrip(DB.projects.pop()));DB.current=null;save();}
 function renderArchives(){
   var ap=$("arch-panel");if(!ap)return;
   var arch=DB.archives||[];
