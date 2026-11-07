@@ -120,7 +120,9 @@ h2.paneltitle{font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:1
     <button class="ghost small" id="b-saveproj"></button>
     <button class="ghost small" id="b-import"></button>
     <button class="ghost small" id="b-delproj"></button>
+    <button class="ghost small" id="b-arch"></button>
   </div>
+  <div class="card" id="arch-panel" style="display:none;margin-bottom:12px"></div>
   <div class="bar">
     <strong>🔑 <span id="t-settings"></span></strong>
     <input type="password" id="apikey" placeholder="">
@@ -322,7 +324,7 @@ var T={
  rwModeFull:"Réécrire entièrement",pickChaps:"Chapitres à réécrire…",rwAllSel:"📖 Tout le roman ({n})",rwSomeSel:"Chapitres : {l}",rwCheckAll:"Tout le roman ({n} chapitres)",rwSelAll:"Tout",rwSelNone:"Aucun",
  bBatchRw:"↻ Réécrire la sélection",rwProg:"Réécriture {n}/{t} : {c}",rwStopped:"⏹ Réécriture interrompue ({n}/{t}) — recliquez pour reprendre",rwDone:"✅ Réécriture terminée : {n} chapitre(s) réécrit(s)",rwPick:"Cochez au moins un chapitre à réécrire.",
  bReviewed:"✓ Révisé",bUnreview:"Dé-réviser",notesPh:"Instructions pour l'IA (optionnel) : ex. « ajoute plus de dialogues », « termine par un cliffhanger »…",
- projects:"Projets :",bNew:"+ Nouveau",bSaveproj:"💾 Sauvegarder",bImport:"📂 Importer",bDelete:"🗑 Supprimer",
+ projects:"Projets :",bNew:"+ Nouveau",bSaveproj:"💾 Sauvegarder",bImport:"📂 Importer",bDelete:"🗑 Archiver",bArch:"🗂 Archives",bUnarch:"↩ Restaurer",bDelForever:"🗑 Supprimer définitivement",archEmpty:"Aucun roman archivé.",archMoved:"✅ Romans précédents déplacés dans les Archives.",
  deleteConfirm:"Supprimer définitivement ce roman ?",errKey:"Ajoutez votre clé API Mistral en haut de page.",
  noEpub:"Écrivez au moins un chapitre avant d'exporter.",errJson:"Réponse IA illisible, réessayez.",
  heroOverline:"Bienvenue dans l'atelier",
@@ -392,7 +394,7 @@ var T={
  rwModeFull:"Rewrite entirely",pickChaps:"Chapters to rewrite…",rwAllSel:"📖 Whole novel ({n})",rwSomeSel:"Chapters: {l}",rwCheckAll:"Whole novel ({n} chapters)",rwSelAll:"All",rwSelNone:"None",
  bBatchRw:"↻ Rewrite selection",rwProg:"Rewriting {n}/{t}: {c}",rwStopped:"⏹ Rewrite stopped ({n}/{t}) — click again to resume",rwDone:"✅ Rewrite complete: {n} chapter(s) rewritten",rwPick:"Tick at least one chapter to rewrite.",
  bReviewed:"✓ Reviewed",bUnreview:"Un-review",notesPh:"Instructions for the AI (optional): e.g. “add more dialogue”, “end on a cliffhanger”…",
- projects:"Projects:",bNew:"+ New",bSaveproj:"💾 Save",bImport:"📂 Import",bDelete:"🗑 Delete",
+ projects:"Projects:",bNew:"+ New",bSaveproj:"💾 Save",bImport:"📂 Import",bDelete:"🗑 Archive",bArch:"🗂 Archives",bUnarch:"↩ Restore",bDelForever:"🗑 Delete permanently",archEmpty:"No archived novel.",archMoved:"✅ Previous novels moved to the Archives.",
  deleteConfirm:"Permanently delete this novel?",errKey:"Add your Mistral API key at the top of the page.",
  noEpub:"Write at least one chapter before exporting.",errJson:"Unreadable AI answer, try again.",
  heroOverline:"Welcome to the workshop",
@@ -411,8 +413,8 @@ var SIZES=[{v:12,fr:"Court (12 chap.)",en:"Short (12 ch.)"},{v:18,fr:"18 chapitr
 function label(list,v){for(var i=0;i<list.length;i++){if(list[i].v===v)return list[i][L];}return list[0][L];}
 
 // ============================= Données =============================
-var DB={current:null,projects:[]};
-try{var s=localStorage.getItem("aria-db");if(s){DB=JSON.parse(s);}else{
+var DB={current:null,projects:[],archives:[]};
+try{var s=localStorage.getItem("aria-db");if(s){DB=JSON.parse(s);if(!DB.archives)DB.archives=[];}else{
   var old=localStorage.getItem("roman-ia");
   if(old){var o=JSON.parse(old);
     if(o&&(o.title||o.pitch||o.plan||(o.chapters&&o.chapters.length))){o.id="p"+Date.now();o.nlang=o.nlang||"fr";o.goal=o.goal||50000;o.chlen=o.chlen||"std";DB.projects.push(o);DB.current=o.id;}}}
@@ -420,6 +422,27 @@ try{var s=localStorage.getItem("aria-db");if(s){DB=JSON.parse(s);}else{
 function save(){try{localStorage.setItem("aria-db",JSON.stringify(DB));}catch(e){}}
 function cur(){for(var i=0;i<DB.projects.length;i++){if(DB.projects[i].id===DB.current)return DB.projects[i];}return null;}
 function newProject(title,genre){var p={id:"p"+Date.now(),title:title||"",genre:genre||"fantasy",style:"classic",nlang:L==="en"?"en":"fr",pitch:"",plan:"",world:"",characters:[],chapters:[],goal:50000,chlen:"std"};DB.projects.push(p);DB.current=p.id;save();return p;}
+// ---- Archives : l'ancien est effacé de la liste mais gardé en mémoire ----
+function archiveProject(id){DB.archives=DB.archives||[];var i=DB.projects.map(function(x){return x.id;}).indexOf(id);if(i<0)return;DB.archives.unshift(DB.projects[i]);DB.projects.splice(i,1);if(DB.current===id)DB.current=DB.projects.length?DB.projects[0].id:null;save();}
+function archiveAll(){DB.archives=DB.archives||[];while(DB.projects.length)DB.archives.unshift(DB.projects.pop());DB.current=null;save();}
+function renderArchives(){
+  var ap=$("arch-panel");if(!ap)return;
+  var arch=DB.archives||[];
+  var b=$("b-arch");if(b)b.textContent=t("bArch")+(arch.length?" ("+arch.length+")":"");
+  if(ap.style.display==="none")return;
+  ap.innerHTML="";
+  if(!arch.length){var e=document.createElement("p");e.className="hint";e.textContent=t("archEmpty");ap.appendChild(e);return;}
+  arch.forEach(function(p,idx){
+    var row=document.createElement("div");row.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0";
+    var name=document.createElement("strong");name.textContent=p.title||"(sans titre)";
+    var wc=document.createElement("span");wc.className="wc";wc.textContent=" · "+(p.chapters||[]).reduce(function(a,c){return a+wordCount(c);},0).toLocaleString()+" "+t("words");
+    var b1=document.createElement("button");b1.className="small";b1.textContent=t("bUnarch");
+    b1.onclick=function(){DB.archives.splice(idx,1);DB.projects.push(p);DB.current=p.id;save();ap.style.display="none";renderAll();};
+    var b2=document.createElement("button");b2.className="ghost small";b2.textContent=t("bDelForever");
+    b2.onclick=function(){if(!confirm(t("deleteConfirm")))return;DB.archives.splice(idx,1);save();renderArchives();};
+    row.appendChild(name);row.appendChild(wc);row.appendChild(b1);row.appendChild(b2);ap.appendChild(row);
+  });
+}
 
 function $(id){return document.getElementById(id);}
 function showErr(m){var e=$("err");e.textContent=m;e.style.display="block";genNoteHide();setTimeout(function(){e.style.display="none";},9000);}
@@ -520,7 +543,7 @@ function applyI18n(){
   $("b-autonovel").textContent=t("bAutoNovel");
  $("b-stop").textContent=t("bStop");
  $("footer").textContent=t("footer");
-  $("b-new").textContent=t("bNew");$("b-saveproj").textContent=t("bSaveproj");$("b-import").textContent=t("bImport");$("b-delproj").textContent=t("bDelete");
+  $("b-new").textContent=t("bNew");$("b-saveproj").textContent=t("bSaveproj");$("b-import").textContent=t("bImport");$("b-delproj").textContent=t("bDelete");$("b-arch").textContent=t("bArch");
   $("b-pitch").textContent=t("bPitch");$("b-plan").textContent=t("bPlan");$("b-perso").textContent=t("bPerso");$("b-perso-add").textContent=t("bAddPerso");$("b-monde").textContent=t("bMonde");
   $("hero-feats").innerHTML="";
   [t("feat1"),t("feat2"),t("feat3"),t("feat4")].forEach(function(f){var s=document.createElement("div");s.className="feat";s.textContent=f;$("hero-feats").appendChild(s);});
@@ -575,7 +598,7 @@ function renderWorkspace(){
   $("nch").value=Math.max(3,Math.min(100,p.chapters.length||12));
   $("goal").value=p.goal||50000;
   keyBadge();
-  renderPersos();renderChaps();updateStats();renderPitchOptions();renderBatchRw();renderEdReport();renderSynopsis();
+  renderPersos();renderChaps();updateStats();renderPitchOptions();renderBatchRw();renderEdReport();renderSynopsis();renderArchives();
 }
 function renderAll(){applyI18n();renderWorkspace();}
 
@@ -1079,10 +1102,9 @@ $("nch").oninput=function(){};
 $("hero-start").onclick=function(){newProject($("hero-title").value.trim(),$("hero-genre").value);renderAll();$("title").focus();};
 $("hero-load").onclick=function(){$("importFile").click();};
 
-$("b-new").onclick=function(){newProject("","fantasy");renderAll();};
-$("b-delproj").onclick=function(){if(!confirm(t("deleteConfirm")))return;
-  DB.projects=DB.projects.filter(function(p){return p.id!==DB.current;});
-  DB.current=DB.projects.length?DB.projects[0].id:null;save();renderAll();};
+$("b-new").onclick=function(){archiveAll();newProject("","fantasy");renderAll();};
+$("b-delproj").onclick=function(){if(!cur())return;archiveProject(DB.current);genNoteDone(t("archMoved"));renderAll();};
+$("b-arch").onclick=function(){var ap=$("arch-panel");ap.style.display=ap.style.display==="block"?"none":"block";renderArchives();};
 $("b-saveproj").onclick=function(){
   var blob=new Blob([JSON.stringify({app:"atelier-roman-ia",version:3,project:cur()},null,1)],{type:"application/json"});
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=slug(cur().title)+".json";a.click();};
